@@ -4,12 +4,8 @@ Copyright © 2025 NAME HERE <EMAIL ADDRESS>
 package cmd
 
 import (
-	"bufio"
 	"fmt"
-	"os"
-	"strconv"
-	"strings"
-
+	"github.com/AlecAivazis/survey/v2"
 	"github.com/spf13/cobra"
 )
 
@@ -23,21 +19,17 @@ var listConnectorsCmd = &cobra.Command{
 	Short: "List available connectors",
 	Long:  `List connectors provide a list of  available connectors configuration files.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("Available connectors:")
-		for i, connector := range connectors {
-			fmt.Printf("%d) %s\n", i+1, connector)
+		var selected string
+		prompt := &survey.Select{
+			Message: "Choose a connector:",
+			Options: connectors,
 		}
-		reader := bufio.NewReader(os.Stdin)
-		fmt.Print("Select connector number: ")
-		input, _ := reader.ReadString('\n')
-		input = strings.TrimSpace(input)
-		choice, err := strconv.Atoi(input)
-		if err != nil || choice < 1 || choice > len(connectors) {
-			fmt.Println("Invalid choice")
+		err := survey.AskOne(prompt, &selected)
+		if err != nil {
+			fmt.Println("please try again")
 			return
 		}
-		selectedConnector := connectors[choice-1]
-		fmt.Printf("You chose: %s \n", selectedConnector)
+		fmt.Println("Selected ", selected)
 	},
 }
 
