@@ -6,22 +6,30 @@ package cmd
 import (
 	"fmt"
 	"github.com/AlecAivazis/survey/v2"
+	"github.com/fatih/color"
 	"github.com/spf13/cobra"
 )
 
 // Available connectors
 // TODO replace with config files
-var connectors = []string{"RabbitMQ", "RabbitMQStream"}
+var connectors = []string{
+	"🚀 PostgreSQL Connector",
+	"💾 MySQL Connector",
+	"📚 MongoDB Connector",
+	"⚡ Redis Connector",
+	"📨 Kafka Source Connector",
+}
 
 // listConnectorsCmd represents the list-connectors command
 var listConnectorsCmd = &cobra.Command{
 	Use:   "list-connectors",
-	Short: "List available connectors",
-	Long:  `List connectors provide a list of  available connectors configuration files.`,
+	Short: "List and select available connectors 🔥",
+	Long:  `Browse predefined connectors.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		var selected string
+		color.Cyan("\n✨ Available Kafka Connectors ✨\n")
 		prompt := &survey.Select{
-			Message: "Choose a connector:",
+			Message: "Pick a connector to work with:",
 			Options: connectors,
 		}
 		err := survey.AskOne(prompt, &selected)
@@ -29,7 +37,7 @@ var listConnectorsCmd = &cobra.Command{
 			fmt.Println("please try again")
 			return
 		}
-		fmt.Println("Selected ", selected)
+		color.Green("\n✅ You selected: %s\n", selected)
 	},
 }
 

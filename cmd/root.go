@@ -4,6 +4,7 @@ Copyright © 2025 NAME HERE <EMAIL ADDRESS>
 package cmd
 
 import (
+	"fmt"
 	"os"
 
 	"github.com/spf13/cobra"
@@ -12,12 +13,12 @@ import (
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
 	Use:   "gokafkaconnect",
-	Short: "cli for managing kafka connectors",
-	Long: `Cli tool for managing kafka connectors, allowing create/update/delete
-	connectors based on the provided templates`,
-	// Uncomment the following line if your bare application
-	// has an action associated with it:
-	// Run: func(cmd *cobra.Command, args []string) { },
+	Short: "🚀 CLI to manage Kafka connectors fast and easy!",
+	Long: `✨ gokafkaconnect - Your sidekick for working with Kafka Connect.
+	Manage, create, and list predefined connectors in seconds!`,
+	Run: func(cmd *cobra.Command, args []string) {
+		fmt.Println("Welcome to gokafkaconnect! Use --help to see available commands.")
+	},
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
