@@ -1,7 +1,7 @@
 package cmd
 
 import (
-	"fmt"
+	"github.com/fatih/color"
 	"os"
 
 	"github.com/spf13/cobra"
@@ -13,8 +13,14 @@ var rootCmd = &cobra.Command{
 	Short: "🚀 CLI to manage Kafka connectors fast and easy!",
 	Long: `✨ gokafkaconnect - Your sidekick for working with Kafka Connect.
 	Manage, create, and list predefined connectors in seconds!`,
-	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("Welcome to gokafkaconnect! Use --help to see available commands.")
+	PersistentPreRun: func(cmd *cobra.Command, args []string) {
+		color.Blue("\n🔍 Checking configuration...\n")
+		cfg, err := LoadConfig()
+		if err != nil || cfg.KafkaConnectURL == "" {
+			color.Yellow("⚠️  No Kafka Connect URL configured.")
+			color.Cyan("Running initial configuration...\n")
+			configureCmd.Run(cmd, args)
+		}
 	},
 }
 
