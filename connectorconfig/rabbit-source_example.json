@@ -1,0 +1,15 @@
+{
+  "connector.class": "com.ibm.eventstreams.connect.rabbitmqsource.RabbitMQSourceConnector",
+  "rabbitmq.topology.recovery.enabled": "true",
+  "tasks.max": "1",
+  "rabbitmq.password": "",
+  "rabbitmq.username": "",
+  "rabbitmq.queue": "",
+  "rabbitmq.network.recovery.interval.ms": "10000",
+  "rabbitmq.virtual.host": "/import",
+  "rabbitmq.prefetch.count": "500",
+  "rabbitmq.port": "5672",
+  "rabbitmq.host": "",
+  "kafka.topic": "",
+  "rabbitmq.automatic.recovery.enabled": "true"
+}
