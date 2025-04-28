@@ -5,6 +5,7 @@ import (
 	"github.com/AlecAivazis/survey/v2"
 	"github.com/fatih/color"
 	"github.com/spf13/cobra"
+	"gokafkaconnect/config"
 	"gokafkaconnect/connectorconfig"
 )
 
@@ -134,7 +135,17 @@ func configureRedisConnector() {
 
 	if submitConfirm {
 		color.Green("\n🚀 Submitting connector...\n")
-		// TODO: logic for submitting connector
+		cfg, err := config.LoadConfig()
+		if err != nil {
+			color.Red("Failed to load config file: %v\n", err)
+			return
+		}
+		err = connectorconfig.SubmitConnector(finalConfig, cfg.KafkaConnectURL)
+		if err != nil {
+			color.Red("Failed to submit connector: %v\n", err)
+		} else {
+			color.Green("✅ Connector submitted successfully!\n")
+		}
 
 	} else {
 		color.Yellow("\n❌ Submission cancelled. Exiting.\n")
