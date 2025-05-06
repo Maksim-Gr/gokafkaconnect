@@ -34,7 +34,7 @@ go build -o gokafkaconnect
 
 ## 🛠 Planned Features
 
-- [ ] Create connector from template
+- [x] Create connector from template
 - [ ] Delete existing connectors
 - [ ] Update connector configurations
 - [ ] Dynamic connector loading from YAML/JSON
