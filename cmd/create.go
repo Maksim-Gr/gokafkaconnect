@@ -121,7 +121,6 @@ func configureRedisConnector() {
 	color.Cyan("\n📦 Final Redis Connector Configuration:\n")
 	fmt.Println(finalConfig)
 
-	// 🆕 Ask if they want to submit
 	var submitConfirm bool
 	submitPrompt := &survey.Confirm{
 		Message: "Do you want to submit this connector to Kafka Connect?",
