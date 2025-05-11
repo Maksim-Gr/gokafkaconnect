@@ -12,8 +12,8 @@ import (
 // listCmd represent command for retrieving connectors from API
 var listCmd = &cobra.Command{
 	Use:   "list",
-	Short: "list available connectors",
-	Long:  `List running connectors`,
+	Short: "list running connectors",
+	Long:  `List current running connectors`,
 	Run: func(cmd *cobra.Command, args []string) {
 		cfg, err := config.LoadConfig()
 		if err != nil {
