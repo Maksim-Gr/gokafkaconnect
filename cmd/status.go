@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/fatih/color"
 	"github.com/spf13/cobra"
@@ -19,17 +20,29 @@ var statusCmd = &cobra.Command{
 			color.Red("Failed to load config: %v\n", err)
 			return
 		}
-		statuses, err := connectorconfig.ListConnectorStatuses(cfg.KafkaConnectURL)
+		rawStatuses, err := connectorconfig.ListConnectorStatuses(cfg.KafkaConnectURL)
 		if err != nil {
-			color.Red("Failed to list  connector's statuses: %v\n", err)
+			color.Red("Failed to list connector statuses: %v", err)
 			return
 		}
+
+		// Marshal map[string]interface{} back into JSON
+		rawJSON, err := json.Marshal(rawStatuses)
+		if err != nil {
+			color.Red("Failed to marshal raw connector statuses: %v", err)
+			return
+		}
+
+		// Unmarshal into typed ConnectorsStatusResponse
+		var connectorStatuses connectorconfig.ConnectorsStatusResponse
+		if err := json.Unmarshal(rawJSON, &connectorStatuses); err != nil {
+			color.Red("Failed to unmarshal into typed connector statuses: %v", err)
+			return
+		}
+
 		color.Cyan("🔗 Connector Statuses:")
-		for name, data := range statuses {
-			statusMap := data.(map[string]interface{})
-			status := statusMap["status"].(map[string]interface{})
-			connectorState := status["connector"].(map[string]interface{})["state"]
-			fmt.Printf("\t%s - Status: %v\n", name, connectorState)
+		for name, status := range connectorStatuses {
+			fmt.Printf("\t%s - Status: %s\n", name, status.Connector.State)
 		}
 	},
 }
