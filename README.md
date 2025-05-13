@@ -38,7 +38,7 @@ go build -o gokafkaconnect
 - [ ] Delete existing connectors
 - [ ] Update connector configurations
 - [ ] Dynamic connector loading from YAML/JSON
-- [ ] Kafka Connect REST API integration
+- [x] Kafka Connect REST API integration
 - [ ] Pretty output and status notifications
 
 ---
