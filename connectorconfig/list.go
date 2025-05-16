@@ -23,7 +23,7 @@ type ConnectorStatus struct {
 
 type ConnectorsStatusResponse map[string]ConnectorStatus
 
-func ListConnectors(kafkaConnectURL string) ([]byte, error) {
+func ListConnectors(kafkaConnectURL string) ([]string, error) {
 	url := fmt.Sprintf("%s/connectors", kafkaConnectURL)
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
@@ -40,7 +40,11 @@ func ListConnectors(kafkaConnectURL string) ([]byte, error) {
 
 	if resp.StatusCode >= 200 && resp.StatusCode < 300 {
 		body, _ := io.ReadAll(resp.Body)
-		return body, nil
+		var connectors []string
+		if err := json.Unmarshal(body, &connectors); err != nil {
+			return nil, err
+		}
+		return connectors, nil
 	}
 	body, _ := io.ReadAll(resp.Body)
 	return nil, fmt.Errorf("failed to list connectors: %s", string(body))
