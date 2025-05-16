@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/stretchr/testify/require"
 	"github.com/testcontainers/testcontainers-go"
+	"github.com/testcontainers/testcontainers-go/network"
 	"github.com/testcontainers/testcontainers-go/wait"
 	"net/http"
 	"testing"
@@ -44,50 +45,97 @@ type KafkaConnectContainer struct {
 
 func setupKafkaConnect(t *testing.T) KafkaConnectContainer {
 	t.Helper()
-
 	ctx := context.Background()
 
-	req := testcontainers.ContainerRequest{
-		Image:        "confluentinc/cp-kafka-connect:7.5.0",
-		ExposedPorts: []string{"8083/tcp"},
+	nw, err := network.New(ctx)
+
+	require.NoError(t, err)
+	t.Cleanup(func() { _ = nw.Remove(ctx) })
+
+	zooReq := testcontainers.ContainerRequest{
+		Image:        "confluentinc/cp-zookeeper:7.2.0",
+		ExposedPorts: []string{"2181/tcp"},
+		Networks:     []string{nw.Name},
 		Env: map[string]string{
-			"CONNECT_BOOTSTRAP_SERVERS":         "dummy:9092",
-			"CONNECT_REST_PORT":                 "8083",
-			"CONNECT_GROUP_ID":                  "quickstart",
-			"CONNECT_CONFIG_STORAGE_TOPIC":      "docker-connect-configs",
-			"CONNECT_OFFSET_STORAGE_TOPIC":      "docker-connect-offsets",
-			"CONNECT_STATUS_STORAGE_TOPIC":      "docker-connect-status",
-			"CONNECT_KEY_CONVERTER":             "org.apache.kafka.connect.json.JsonConverter",
-			"CONNECT_VALUE_CONVERTER":           "org.apache.kafka.connect.json.JsonConverter",
-			"CONNECT_INTERNAL_KEY_CONVERTER":    "org.apache.kafka.connect.json.JsonConverter",
-			"CONNECT_INTERNAL_VALUE_CONVERTER":  "org.apache.kafka.connect.json.JsonConverter",
-			"CONNECT_LOG4J_ROOT_LOGLEVEL":       "INFO",
-			"CONNECT_PLUGIN_PATH":               "/usr/share/java",
-			"CONNECT_REST_ADVERTISED_HOST_NAME": "localhost",
+			"ZOOKEEPER_CLIENT_PORT": "2181",
+			"ZOOKEEPER_TICK_TIME":   "2000",
 		},
-		WaitingFor: wait.ForHTTP("/").WithPort("8083/tcp").WithStartupTimeout(30 * time.Second),
+		WaitingFor: wait.ForListeningPort("2181/tcp").WithStartupTimeout(30 * time.Second),
+		Name:       "zookeeper",
 	}
-	container, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
-		ContainerRequest: req,
+	zooC, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
+		ContainerRequest: zooReq,
 		Started:          true,
 	})
 	require.NoError(t, err)
+	t.Cleanup(func() { _ = zooC.Terminate(ctx) })
 
-	t.Cleanup(func() {
-		_ = container.Terminate(ctx)
+	kafkaReq := testcontainers.ContainerRequest{
+		Image:        "confluentinc/cp-kafka:7.2.0",
+		ExposedPorts: []string{"9092/tcp"},
+		Networks:     []string{nw.Name},
+		Env: map[string]string{
+			"KAFKA_BROKER_ID":                        "1",
+			"KAFKA_ZOOKEEPER_CONNECT":                "zookeeper:2181",
+			"KAFKA_ADVERTISED_LISTENERS":             "PLAINTEXT://kafka:9092",
+			"KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR": "1",
+			"KAFKA_LISTENERS":                        "PLAINTEXT://0.0.0.0:9092",
+			"KAFKA_LOG_DIRS":                         "/tmp/kafka-logs",
+		},
+		WaitingFor: wait.ForListeningPort("9092/tcp").WithStartupTimeout(90 * time.Second),
+		Hostname:   "kafka",
+	}
+	kafkaC, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
+		ContainerRequest: kafkaReq,
+		Started:          true,
+	})
+	require.NoError(t, err)
+	t.Cleanup(func() { _ = kafkaC.Terminate(ctx) })
+
+	connectReq := testcontainers.ContainerRequest{
+		Image:        "confluentinc/cp-kafka-connect:7.5.0",
+		ExposedPorts: []string{"8083/tcp"},
+		Networks:     []string{nw.Name},
+		Env: map[string]string{
+			"CONNECT_BOOTSTRAP_SERVERS":                 "kafka:9092",
+			"CONNECT_REST_PORT":                         "8083",
+			"CONNECT_GROUP_ID":                          "quickstart",
+			"CONNECT_CONFIG_STORAGE_TOPIC":              "docker-connect-configs",
+			"CONNECT_OFFSET_STORAGE_TOPIC":              "docker-connect-offsets",
+			"CONNECT_STATUS_STORAGE_TOPIC":              "docker-connect-status",
+			"CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR": "1",
+			"CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR": "1",
+			"CONNECT_STATUS_STORAGE_REPLICATION_FACTOR": "1",
+			"CONNECT_KEY_CONVERTER":                     "org.apache.kafka.connect.json.JsonConverter",
+			"CONNECT_VALUE_CONVERTER":                   "org.apache.kafka.connect.json.JsonConverter",
+			"CONNECT_INTERNAL_KEY_CONVERTER":            "org.apache.kafka.connect.json.JsonConverter",
+			"CONNECT_INTERNAL_VALUE_CONVERTER":          "org.apache.kafka.connect.json.JsonConverter",
+			"CONNECT_LOG4J_ROOT_LOGLEVEL":               "INFO",
+			"CONNECT_PLUGIN_PATH":                       "/usr/share/java,/usr/share/confluent-hub-components",
+			"CONNECT_REST_ADVERTISED_HOST_NAME":         "localhost",
+		},
+		WaitingFor: wait.ForHTTP("/").WithPort("8083/tcp").WithStartupTimeout(120 * time.Second),
+		Hostname:   "kafkaconnect",
+	}
+	connectC, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
+		ContainerRequest: connectReq,
+		Started:          true,
 	})
 
-	host, err := container.Host(ctx)
+	require.NoError(t, err)
+	t.Cleanup(func() { _ = connectC.Terminate(ctx) })
+
+	connectHost, err := connectC.Host(ctx)
+	require.NoError(t, err)
+	connectPort, err := connectC.MappedPort(ctx, "8083")
 	require.NoError(t, err)
 
-	port, err := container.MappedPort(ctx, "8083")
-	require.NoError(t, err)
-	url := fmt.Sprintf("http://%s:%s", host, port)
-	WaitForKafkaConnectStartUp(t, url, 30*time.Second)
+	connectURL := fmt.Sprintf("http://%s:%s", connectHost, connectPort.Port())
+	WaitForKafkaConnectStartUp(t, connectURL, 90*time.Second)
 
 	return KafkaConnectContainer{
-		Container: container,
-		URL:       url,
+		Container: connectC,
+		URL:       connectURL,
 	}
 }
 
@@ -97,11 +145,10 @@ func TestSubmitListAndListStatuses(t *testing.T) {
 	connectorConfig := `{
 	"name": "test-connector",
 	"config": {
-		"connector.class": "FileStreamSink",
+		"connector.class": "org.apache.kafka.connect.tools.MockSinkConnector",
 		"tasks.max": "1",
-		"file": "/tmp/test.sink.txt",
 		"topics": "test-topic"
-		}
+	}
 	}`
 
 	err := SubmitConnector(connectorConfig, kc.URL)
