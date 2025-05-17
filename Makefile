@@ -5,6 +5,6 @@ lint:
 fmt:
 	gofmt -s -w .
 test:
-	go test ./..
+	go test -v ./...
 
 all: fmt lint test

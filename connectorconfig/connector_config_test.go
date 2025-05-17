@@ -24,7 +24,7 @@ func WaitForKafkaConnectStartUp(t *testing.T, baseURL string, timeout time.Durat
 	for time.Now().Before(deadline) {
 		resp, err := http.Get(fmt.Sprintf("%s/connector-plugins", baseURL))
 		if err == nil && resp.StatusCode == http.StatusOK {
-			defer resp.Body.Close()
+			defer resp.Body.Close() //nolint:errcheck
 			var plugins []Plugin
 			if json.NewDecoder(resp.Body).Decode(&plugins) == nil {
 				if len(plugins) > 0 {
@@ -131,7 +131,7 @@ func setupKafkaConnect(t *testing.T) KafkaConnectContainer {
 	require.NoError(t, err)
 
 	connectURL := fmt.Sprintf("http://%s:%s", connectHost, connectPort.Port())
-	WaitForKafkaConnectStartUp(t, connectURL, 90*time.Second)
+	WaitForKafkaConnectStartUp(t, connectURL, 20*time.Second)
 
 	return KafkaConnectContainer{
 		Container: connectC,

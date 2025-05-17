@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"encoding/json"
 	"fmt"
 	"github.com/fatih/color"
 	"github.com/spf13/cobra"
@@ -20,13 +19,11 @@ var listCmd = &cobra.Command{
 			color.Red("Failed to load config: %v\n", err)
 			return
 		}
-		data, err := connectorconfig.ListConnectors(cfg.KafkaConnectURL)
+		connectors, err := connectorconfig.ListConnectors(cfg.KafkaConnectURL)
 		if err != nil {
 			color.Red("Failed to list connectors: %v\n", err)
 			return
 		}
-		var connectors []string
-		err = json.Unmarshal(data, &connectors)
 
 		color.Cyan("🔗 Connectors:")
 		for _, connector := range connectors {
