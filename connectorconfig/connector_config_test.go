@@ -83,7 +83,7 @@ func setupKafkaConnect(t *testing.T) KafkaConnectContainer {
 			"KAFKA_LOG_DIRS":                         "/tmp/kafka-logs",
 		},
 		WaitingFor: wait.ForListeningPort("9092/tcp").WithStartupTimeout(90 * time.Second),
-		Hostname:   "kafka",
+		Name:       "kafka",
 	}
 	kafkaC, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
 		ContainerRequest: kafkaReq,
@@ -115,7 +115,7 @@ func setupKafkaConnect(t *testing.T) KafkaConnectContainer {
 			"CONNECT_REST_ADVERTISED_HOST_NAME":         "localhost",
 		},
 		WaitingFor: wait.ForHTTP("/").WithPort("8083/tcp").WithStartupTimeout(120 * time.Second),
-		Hostname:   "kafkaconnect",
+		Name:       "kafkaconnect",
 	}
 	connectC, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
 		ContainerRequest: connectReq,
