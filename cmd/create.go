@@ -6,7 +6,9 @@ import (
 	"github.com/fatih/color"
 	"github.com/spf13/cobra"
 	"gokafkaconnect/config"
-	"gokafkaconnect/connectorconfig"
+	"gokafkaconnect/connector"
+	"gokafkaconnect/connector/rabbitmq"
+	"gokafkaconnect/internal/util"
 )
 
 // Available connectors
@@ -20,7 +22,7 @@ var connectors = []string{
 var createCmd = &cobra.Command{
 	Use:   "create",
 	Short: "Create a connector from predefined configuration  🔥",
-	Long:  `Browse predefined connectors.`,
+	Long:  `Browse predefined connector.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		var selected string
 		color.Cyan("\n✨ Available Kafka Connectors ✨\n")
@@ -43,10 +45,10 @@ var createCmd = &cobra.Command{
 func configureRedisConnector() {
 	color.Yellow("\n⚙️  Starting configuration for Redis Connector...\n")
 
-	connectorConfig := connectorconfig.GetRedisConnectorTemplate()
+	connectorConfig := rabbitmq.GetRedisConnectorTemplate()
 
 	var questions []*survey.Question
-	for _, field := range connectorconfig.RequiredFields() {
+	for _, field := range rabbitmq.RequiredFields() {
 		var prompt survey.Prompt
 		if field == "rabbitmq.password" {
 			prompt = &survey.Password{Message: fmt.Sprintf("Enter %s:", field)}
@@ -73,7 +75,7 @@ func configureRedisConnector() {
 	}
 
 	for {
-		finalConfig, _ := connectorconfig.ToJSON(connectorConfig)
+		finalConfig, _ := util.ToJSON(connectorConfig)
 		color.Cyan("\n📦 Current Redis Connector Configuration:\n")
 		fmt.Println(finalConfig)
 
@@ -96,7 +98,7 @@ func configureRedisConnector() {
 		var fieldToChange string
 		fieldPrompt := &survey.Select{
 			Message: "Which field do you want to change?",
-			Options: connectorconfig.KeysFromMap(connectorConfig),
+			Options: util.KeysFromMap(connectorConfig),
 		}
 		err = survey.AskOne(fieldPrompt, &fieldToChange)
 		if err != nil {
@@ -117,7 +119,7 @@ func configureRedisConnector() {
 		connectorConfig[fieldToChange] = newValue
 
 	}
-	finalConfig, _ := connectorconfig.ToJSON(connectorConfig)
+	finalConfig, _ := util.ToJSON(connectorConfig)
 	color.Cyan("\n📦 Final Redis Connector Configuration:\n")
 	fmt.Println(finalConfig)
 
@@ -139,7 +141,7 @@ func configureRedisConnector() {
 			color.Red("Failed to load config file: %v\n", err)
 			return
 		}
-		err = connectorconfig.SubmitConnector(finalConfig, cfg.KafkaConnectURL)
+		err = connector.SubmitConnector(finalConfig, cfg.KafkaConnectURL)
 		if err != nil {
 			color.Red("Failed to submit connector: %v\n", err)
 		} else {

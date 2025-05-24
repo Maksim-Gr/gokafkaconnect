@@ -6,21 +6,21 @@ import (
 	"github.com/fatih/color"
 	"github.com/spf13/cobra"
 	"gokafkaconnect/config"
-	"gokafkaconnect/connectorconfig"
+	"gokafkaconnect/connector"
 )
 
 // statCmd represents the stat command
-var statusCmd = &cobra.Command{
-	Use:   "status",
-	Short: "Stat command return statuses for all connectors",
-	Long:  `Stat command return statuses for all connectors for configured Kafka connect endpoint`,
+var healthCheck = &cobra.Command{
+	Use:   "health-check",
+	Short: "Show connector statuses",
+	Long:  `Show each connector status`,
 	Run: func(cmd *cobra.Command, args []string) {
 		cfg, err := config.LoadConfig()
 		if err != nil {
 			color.Red("Failed to load config: %v\n", err)
 			return
 		}
-		rawStatuses, err := connectorconfig.ListConnectorStatuses(cfg.KafkaConnectURL)
+		rawStatuses, err := connector.ListConnectorStatuses(cfg.KafkaConnectURL)
 		if err != nil {
 			color.Red("Failed to list connector statuses: %v", err)
 			return
@@ -34,7 +34,7 @@ var statusCmd = &cobra.Command{
 		}
 
 		// Unmarshal into typed ConnectorsStatusResponse
-		var connectorStatuses connectorconfig.ConnectorsStatusResponse
+		var connectorStatuses connector.ConnectorsStatusResponse
 		if err := json.Unmarshal(rawJSON, &connectorStatuses); err != nil {
 			color.Red("Failed to unmarshal into typed connector statuses: %v", err)
 			return
@@ -48,7 +48,7 @@ var statusCmd = &cobra.Command{
 }
 
 func init() {
-	rootCmd.AddCommand(statusCmd)
+	rootCmd.AddCommand(healthCheck)
 
 	// Here you will define your flags and configuration settings.
 

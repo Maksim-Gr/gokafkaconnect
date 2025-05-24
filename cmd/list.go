@@ -5,23 +5,23 @@ import (
 	"github.com/fatih/color"
 	"github.com/spf13/cobra"
 	"gokafkaconnect/config"
-	"gokafkaconnect/connectorconfig"
+	"gokafkaconnect/connector"
 )
 
 // listCmd represent command for retrieving connectors from API
 var listCmd = &cobra.Command{
 	Use:   "list",
-	Short: "list running connectors",
-	Long:  `List current running connectors`,
+	Short: "List running connector",
+	Long:  `List current running connector`,
 	Run: func(cmd *cobra.Command, args []string) {
 		cfg, err := config.LoadConfig()
 		if err != nil {
 			color.Red("Failed to load config: %v\n", err)
 			return
 		}
-		connectors, err := connectorconfig.ListConnectors(cfg.KafkaConnectURL)
+		connectors, err := connector.ListConnectors(cfg.KafkaConnectURL)
 		if err != nil {
-			color.Red("Failed to list connectors: %v\n", err)
+			color.Red("Failed to list connector: %v\n", err)
 			return
 		}
 

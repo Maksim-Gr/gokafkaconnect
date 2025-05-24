@@ -1,8 +1,4 @@
-package connectorconfig
-
-import (
-	"encoding/json"
-)
+package rabbitmq
 
 var defaultRedisConfig = map[string]string{
 	"connector.class":                       "com.ibm.eventstreams.connect.rabbitmqsource.RabbitMQSourceConnector",
@@ -37,20 +33,4 @@ func RequiredFields() []string {
 		"rabbitmq.host",
 		"kafka.topic",
 	}
-}
-
-func KeysFromMap(m map[string]string) []string {
-	keys := make([]string, 0, len(m))
-	for k := range m {
-		keys = append(keys, k)
-	}
-	return keys
-}
-
-func ToJSON(config map[string]string) (string, error) {
-	out, err := json.MarshalIndent(config, "", "  ")
-	if err != nil {
-		return "", err
-	}
-	return string(out), nil
 }

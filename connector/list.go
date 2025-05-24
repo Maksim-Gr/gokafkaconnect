@@ -1,4 +1,4 @@
-package connectorconfig
+package connector
 
 import (
 	"encoding/json"
@@ -24,7 +24,7 @@ type ConnectorStatus struct {
 type ConnectorsStatusResponse map[string]ConnectorStatus
 
 func ListConnectors(kafkaConnectURL string) ([]string, error) {
-	url := fmt.Sprintf("%s/connectors", kafkaConnectURL)
+	url := fmt.Sprintf("%s/connector", kafkaConnectURL)
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return nil, err
@@ -47,11 +47,11 @@ func ListConnectors(kafkaConnectURL string) ([]string, error) {
 		return connectors, nil
 	}
 	body, _ := io.ReadAll(resp.Body)
-	return nil, fmt.Errorf("failed to list connectors: %s", string(body))
+	return nil, fmt.Errorf("failed to list connector: %s", string(body))
 }
 
 func ListConnectorStatuses(kafkaConnectURL string) (ConnectorsStatusResponse, error) {
-	url := fmt.Sprintf("%s/connectors?expand=status", kafkaConnectURL)
+	url := fmt.Sprintf("%s/connector?expand=status", kafkaConnectURL)
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return nil, err

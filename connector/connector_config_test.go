@@ -1,4 +1,4 @@
-package connectorconfig
+package connector
 
 import (
 	"context"
