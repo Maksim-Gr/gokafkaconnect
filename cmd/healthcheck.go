@@ -9,7 +9,7 @@ import (
 	"gokafkaconnect/connector"
 )
 
-// statCmd represents the stat command
+// health-check show statuses for connectors
 var healthCheck = &cobra.Command{
 	Use:   "health-check",
 	Short: "Show connector statuses",
@@ -26,14 +26,12 @@ var healthCheck = &cobra.Command{
 			return
 		}
 
-		// Marshal map[string]interface{} back into JSON
 		rawJSON, err := json.Marshal(rawStatuses)
 		if err != nil {
 			color.Red("Failed to marshal raw connector statuses: %v", err)
 			return
 		}
 
-		// Unmarshal into typed ConnectorsStatusResponse
 		var connectorStatuses connector.ConnectorsStatusResponse
 		if err := json.Unmarshal(rawJSON, &connectorStatuses); err != nil {
 			color.Red("Failed to unmarshal into typed connector statuses: %v", err)
