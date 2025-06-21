@@ -1,11 +1,11 @@
 package connector
 
 import (
-	"bytes"
+	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
+	"os"
 )
 
 func DumpConnectorConfig(kafkaConnectURL string, connectors []string, outPutFile string) error {
@@ -31,5 +31,23 @@ func DumpConnectorConfig(kafkaConnectURL string, connectors []string, outPutFile
 			body, _ := io.ReadAll(resp.Body)
 			return fmt.Errorf("failed to connect to %s: %s", url, string(body))
 		}
+
+		var config map[string]interface{}
+		if err := json.NewDecoder(resp.Body).Decode(&config); err != nil {
+			return fmt.Errorf("failed to decode config: %s: %w", name, err)
+		}
+		dumpConfig[name] = config
 	}
+	file, err := os.Create(outPutFile)
+	if err != nil {
+		return fmt.Errorf("failed to create file: %s", err)
+	}
+	defer file.Close()
+
+	encoder := json.NewEncoder(file)
+	encoder.SetIndent("", "  ")
+	if err := encoder.Encode(dumpConfig); err != nil {
+		return fmt.Errorf("failed to encode config: %s", err)
+	}
+	return nil
 }
