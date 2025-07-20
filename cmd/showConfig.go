@@ -4,23 +4,31 @@ Copyright © 2025 NAME HERE <EMAIL ADDRESS>
 package cmd
 
 import (
+	"encoding/json"
 	"fmt"
-
+	"github.com/fatih/color"
 	"github.com/spf13/cobra"
 )
 
 // showConfigCmd represents the showConfig command
 var showConfigCmd = &cobra.Command{
-	Use:   "showConfig",
-	Short: "A brief description of your command",
-	Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
-
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
+	Use:   "show-config",
+	Short: "display API endpoint",
+	Long:  `Display Kafka Connect API endpoint.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("showConfig called")
+		cfg, err := LoadConfig()
+		if err != nil {
+			color.Red("Failed to load config: %v\n", err)
+			return
+		}
+
+		color.Cyan("\n📋 Current Configuration:")
+		data, err := json.MarshalIndent(cfg, "", "  ")
+		if err != nil {
+			color.Red("Failed to format config: %v\n", err)
+			return
+		}
+		fmt.Printf("\n%s\n\n", string(data))
 	},
 }
 

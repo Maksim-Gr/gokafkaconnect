@@ -13,19 +13,19 @@ import (
 
 // Available connectors
 var connectors = []string{
-	"🐇 RabbitMQ Connector",
-	"🐇 RabbitMQ  Stream Connector",
-	"❄️ Iceberg Connector",
+	"RabbitMQ Connector",
+	"RabbitMQ  Stream Connector",
+	"️Iceberg Connector",
 }
 
 // createCmd represents the create command
 var createCmd = &cobra.Command{
 	Use:   "create",
-	Short: "Create a connector from predefined configuration  🔥",
+	Short: "Create a connector from predefined configuration  ",
 	Long:  `Browse predefined connector.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		var selected string
-		color.Cyan("\n✨ Available Kafka Connectors ✨\n")
+		color.Cyan("\n Available Kafka Connectors \n")
 		prompt := &survey.Select{
 			Message: "Pick a connector to work with:",
 			Options: connectors,
@@ -35,7 +35,7 @@ var createCmd = &cobra.Command{
 			fmt.Println("please try again")
 			return
 		}
-		color.Green("\n✅ You selected: %s\n", selected)
+		color.Green("\n You selected: %s\n", selected)
 		if selected == "🐇 RabbitMQ Connector" {
 			configureRedisConnector()
 		}
@@ -43,7 +43,7 @@ var createCmd = &cobra.Command{
 }
 
 func configureRedisConnector() {
-	color.Yellow("\n⚙️  Starting configuration for Redis Connector...\n")
+	color.Yellow("\n  Starting configuration for Redis Connector...\n")
 
 	connectorConfig := rabbitmq.GetRedisConnectorTemplate()
 
@@ -76,7 +76,7 @@ func configureRedisConnector() {
 
 	for {
 		finalConfig, _ := util.ToJSON(connectorConfig)
-		color.Cyan("\n📦 Current Redis Connector Configuration:\n")
+		color.Cyan("\n Current Redis Connector Configuration:\n")
 		fmt.Println(finalConfig)
 
 		var confirmChange bool
@@ -91,7 +91,7 @@ func configureRedisConnector() {
 		}
 
 		if !confirmChange {
-			color.Green("\n🎯 Configuration complete!\n")
+			color.Green("\n Configuration complete!\n")
 			break
 		}
 
@@ -120,7 +120,7 @@ func configureRedisConnector() {
 
 	}
 	finalConfig, _ := util.ToJSON(connectorConfig)
-	color.Cyan("\n📦 Final Redis Connector Configuration:\n")
+	color.Cyan("\nFinal Redis Connector Configuration:\n")
 	fmt.Println(finalConfig)
 
 	var submitConfirm bool
@@ -135,7 +135,7 @@ func configureRedisConnector() {
 	}
 
 	if submitConfirm {
-		color.Green("\n🚀 Submitting connector...\n")
+		color.Green("\n Submitting connector...\n")
 		cfg, err := config.LoadConfig()
 		if err != nil {
 			color.Red("Failed to load config file: %v\n", err)
@@ -145,11 +145,11 @@ func configureRedisConnector() {
 		if err != nil {
 			color.Red("Failed to submit connector: %v\n", err)
 		} else {
-			color.Green("✅ Connector submitted successfully!\n")
+			color.Green("Connector submitted successfully!\n")
 		}
 
 	} else {
-		color.Yellow("\n❌ Submission cancelled. Exiting.\n")
+		color.Yellow("\n Submission cancelled. Exiting.\n")
 	}
 
 }

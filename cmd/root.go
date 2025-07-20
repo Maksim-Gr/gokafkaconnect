@@ -10,14 +10,14 @@ import (
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
 	Use:   "gokafkaconnect",
-	Short: "🚀 CLI to manage Kafka connector fast and easy!",
-	Long: `✨ gokafkaconnect - Your sidekick for working with Kafka Connect.
+	Short: "CLI to manage Kafka connector fast and easy!",
+	Long: `gokafkaconnect - cli tool for working  with Kafka Connect.
 	Manage, create, and list predefined connector in seconds!`,
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
-		color.Blue("\n🔍 Checking configuration...\n")
+		color.Blue("\nChecking configuration...\n")
 		cfg, err := LoadConfig()
 		if err != nil || cfg.KafkaConnectURL == "" {
-			color.Yellow("⚠️  No Kafka Connect URL configured.")
+			color.Yellow("No Kafka Connect URL configured.")
 			color.Cyan("Running initial configuration...\n")
 			configureCmd.Run(cmd, args)
 		}
