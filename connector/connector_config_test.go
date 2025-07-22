@@ -159,3 +159,8 @@ func TestSubmitListAndListStatuses(t *testing.T) {
 
 	require.Contains(t, connectors, "test-connector")
 }
+
+func TestDumpConnectorConfig(t *testing.T) {
+	kc := setupKafkaConnect(t)
+
+}

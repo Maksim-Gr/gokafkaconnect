@@ -1,6 +1,3 @@
-/*
-Copyright © 2025 NAME HERE <EMAIL ADDRESS>
-*/
 package cmd
 
 import (
@@ -13,7 +10,7 @@ import (
 // showConfigCmd represents the showConfig command
 var showConfigCmd = &cobra.Command{
 	Use:   "show-config",
-	Short: "display API endpoint",
+	Short: "Display API endpoint",
 	Long:  `Display Kafka Connect API endpoint.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		cfg, err := LoadConfig()

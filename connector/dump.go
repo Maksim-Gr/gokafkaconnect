@@ -25,7 +25,7 @@ func DumpConnectorConfig(kafkaConnectURL string, connectors []string, outPutFile
 		if err != nil {
 			return fmt.Errorf("failed to connect to %s: %s", url, err)
 		}
-		defer resp.Body.Close()
+		defer resp.Body.Close() //nolint:errcheck
 
 		if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 			body, _ := io.ReadAll(resp.Body)
@@ -42,7 +42,7 @@ func DumpConnectorConfig(kafkaConnectURL string, connectors []string, outPutFile
 	if err != nil {
 		return fmt.Errorf("failed to create file: %s", err)
 	}
-	defer file.Close()
+	defer file.Close() //nolint:errcheck
 
 	encoder := json.NewEncoder(file)
 	encoder.SetIndent("", "  ")
