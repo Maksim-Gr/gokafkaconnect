@@ -4,13 +4,15 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/http"
+	"os"
+	"testing"
+	"time"
+
 	"github.com/stretchr/testify/require"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/network"
 	"github.com/testcontainers/testcontainers-go/wait"
-	"net/http"
-	"testing"
-	"time"
 )
 
 func WaitForKafkaConnectStartUp(t *testing.T, baseURL string, timeout time.Duration) {
@@ -163,4 +165,21 @@ func TestSubmitListAndListStatuses(t *testing.T) {
 func TestDumpConnectorConfig(t *testing.T) {
 	kc := setupKafkaConnect(t)
 
+	connectorConfig := `{
+	"name": "test-connector",
+	"config": {
+		"connector.class": "org.apache.kafka.connect.tools.MockSinkConnector",
+		"tasks.max": "1",
+		"topics": "test-topic"
+	}
+	}`
+
+	err := SubmitConnector(connectorConfig, kc.URL)
+	require.NoError(t, err)
+
+	tempFile := os.TempDir() + "/connector-dump.json"
+	err = DumpConnectorConfig(kc.URL, []string{"test-connector"}, tempFile)
+	require.NoError(t, err)
+
+	require.FileExists(t, tempFile)
 }
