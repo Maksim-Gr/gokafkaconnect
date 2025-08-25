@@ -3,10 +3,11 @@ package cmd
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/AlecAivazis/survey/v2"
-	"github.com/fatih/color"
 	"os"
 	"path/filepath"
+
+	"github.com/AlecAivazis/survey/v2"
+	"github.com/fatih/color"
 
 	"github.com/spf13/cobra"
 )
@@ -39,26 +40,41 @@ var configureCmd = &cobra.Command{
 	Short: "Set Kafka connect URL ",
 	Long:  `Configure and set Kafka Connect REST API URL`,
 	Run: func(cmd *cobra.Command, args []string) {
-		color.Cyan("\n Configuring Kafka Connect URL...\n")
+
+		dryRun, _ := cmd.Flags().GetBool("dry-run")
+		if dryRun {
+			color.Cyan("Dry run mode")
+		} else {
+			color.Cyan("\n Configuring Kafka Connect URL...\n")
+		}
+
 		configPath, err := getConfigPath()
 		if err != nil {
 			color.Red("Failed to determine config path: %v", err)
-			return
+			os.Exit(1)
 		}
-
+		if currentConfig, err := LoadConfig(); err == nil {
+			color.Yellow("Current URL %s", currentConfig.KafkaConnectURL)
+		}
 		var url string
 		prompt := &survey.Input{
 			Message: "Kafka Connect URL:",
+			Help:    "Enter the URL of your Kafka Connect REST API",
 		}
 		err = survey.AskOne(prompt, &url, survey.WithValidator(survey.Required))
 		if err != nil {
 			fmt.Println("Failed: ", err)
-			return
+			os.Exit(1)
 		}
 
 		cfg := RestAPIConfig{
 			KafkaConnectURL: url,
 		}
+
+		if dryRun {
+			color.Cyan("Dry run mode")
+		}
+
 		err = saveConfig(cfg, configPath)
 		if err != nil {
 			color.Red("Failed to save config file: %s", err)
