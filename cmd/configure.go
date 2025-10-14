@@ -41,7 +41,6 @@ var configureCmd = &cobra.Command{
 	Long:  `Configure and set Kafka Connect REST API URL`,
 	Run: func(cmd *cobra.Command, args []string) {
 
-		dryRun, _ := cmd.Flags().GetBool("dry-run")
 		if dryRun {
 			color.Cyan("Dry run mode")
 		} else {
