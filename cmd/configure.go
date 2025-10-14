@@ -2,7 +2,9 @@ package cmd
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
+	"net/url"
 	"os"
 	"path/filepath"
 
@@ -30,6 +32,20 @@ func getConfigPath() (string, error) {
 		return "", err
 	}
 	return filepath.Join(exe, "config.json"), nil
+}
+
+func validateURL(input string) error {
+	parsed, err := url.ParseRequestURI(input)
+	if err != nil {
+		return errors.New("invalid URL")
+	}
+	if parsed.Scheme != "http" && parsed.Scheme != "https" {
+		return errors.New("url should starts with http:// or https:// ")
+	}
+	if parsed.Host == "" {
+		return errors.New("url should contains host")
+	}
+	return nil
 }
 
 //var configPath = filepath.Join(os.Getenv("HOME"), ".gokafkacon", "config.json")
@@ -60,7 +76,14 @@ var configureCmd = &cobra.Command{
 			Message: "Kafka Connect URL:",
 			Help:    "Enter the URL of your Kafka Connect REST API",
 		}
-		err = survey.AskOne(prompt, &url, survey.WithValidator(survey.Required))
+		err = survey.AskOne(prompt, &url,
+			survey.WithValidator(survey.ComposeValidators(
+				survey.Required, func(ans interface{}) error {
+					str := ans.(string)
+					return validateURL(str)
+				},
+			)),
+		)
 		if err != nil {
 			fmt.Println("Failed: ", err)
 			os.Exit(1)
