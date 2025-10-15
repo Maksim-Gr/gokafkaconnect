@@ -2,13 +2,14 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/AlecAivazis/survey/v2"
-	"github.com/fatih/color"
-	"github.com/spf13/cobra"
 	"gokafkaconnect/config"
 	"gokafkaconnect/connector"
 	"gokafkaconnect/connector/rabbitmq"
 	"gokafkaconnect/internal/util"
+
+	"github.com/AlecAivazis/survey/v2"
+	"github.com/fatih/color"
+	"github.com/spf13/cobra"
 )
 
 // Available connectors

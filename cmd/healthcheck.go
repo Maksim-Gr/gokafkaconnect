@@ -3,10 +3,11 @@ package cmd
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/fatih/color"
-	"github.com/spf13/cobra"
 	"gokafkaconnect/config"
 	"gokafkaconnect/connector"
+
+	"github.com/fatih/color"
+	"github.com/spf13/cobra"
 )
 
 // health-check show statuses for connectors
