@@ -7,6 +7,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/AlecAivazis/survey/v2"
 	"github.com/fatih/color"
@@ -35,16 +36,29 @@ func getConfigPath() (string, error) {
 }
 
 func validateURL(input string) error {
-	parsed, err := url.ParseRequestURI(input)
+	if input == "" {
+		return errors.New("URL cannot be empty")
+	}
+
+	testURL := input
+	if !strings.HasPrefix(input, "http://") && !strings.HasPrefix(input, "https://") {
+		testURL = "http://" + input
+	}
+
+	parsed, err := url.ParseRequestURI(testURL)
 	if err != nil {
-		return errors.New("invalid URL")
+		return errors.New("invalid URL format")
 	}
-	if parsed.Scheme != "http" && parsed.Scheme != "https" {
-		return errors.New("url should starts with http:// or https:// ")
-	}
+
 	if parsed.Host == "" {
-		return errors.New("url should contains host")
+		return errors.New("URL must contain a host (e.g. localhost:8083 or example.com)")
 	}
+
+	host := parsed.Hostname()
+	if !strings.Contains(host, ".") && !strings.Contains(host, ":") && host != "localhost" {
+		return fmt.Errorf("invalid host: %s (must include '.' or ':' or be 'localhost')", host)
+	}
+
 	return nil
 }
 
@@ -53,14 +67,14 @@ func validateURL(input string) error {
 // configureCmd represents the configure command
 var configureCmd = &cobra.Command{
 	Use:   "configure",
-	Short: "Set Kafka connect URL ",
-	Long:  `Configure and set Kafka Connect REST API URL`,
+	Short: "Set Kafka connect URL",
+	Long:  `Configure and set Kafka Connect REST API URL.`,
 	Run: func(cmd *cobra.Command, args []string) {
 
 		if dryRun {
 			color.Cyan("Dry run mode")
 		} else {
-			color.Cyan("\n Configuring Kafka Connect URL...\n")
+			color.Cyan("\nConfiguring Kafka Connect URL...\n")
 		}
 
 		configPath, err := getConfigPath()
@@ -68,33 +82,43 @@ var configureCmd = &cobra.Command{
 			color.Red("Failed to determine config path: %v", err)
 			os.Exit(1)
 		}
+
 		if currentConfig, err := LoadConfig(); err == nil {
-			color.Yellow("Current URL %s", currentConfig.KafkaConnectURL)
+			color.Yellow("Current URL: %s", currentConfig.KafkaConnectURL)
 		}
-		var url string
+
+		var inputURL string
 		prompt := &survey.Input{
 			Message: "Kafka Connect URL:",
-			Help:    "Enter the URL of your Kafka Connect REST API",
+			Help:    "Enter the URL of your Kafka Connect REST API (e.g. http://localhost:8083)",
 		}
-		err = survey.AskOne(prompt, &url,
+
+		err = survey.AskOne(prompt, &inputURL,
 			survey.WithValidator(survey.ComposeValidators(
-				survey.Required, func(ans interface{}) error {
-					str := ans.(string)
-					return validateURL(str)
+				survey.Required,
+				func(ans interface{}) error {
+					return validateURL(ans.(string))
 				},
 			)),
 		)
 		if err != nil {
-			fmt.Println("Failed: ", err)
+			fmt.Println("Failed:", err)
 			os.Exit(1)
 		}
 
+		if !strings.HasPrefix(inputURL, "http://") && !strings.HasPrefix(inputURL, "https://") {
+			color.Yellow("No scheme specified — assuming http://")
+			inputURL = "http://" + inputURL
+		}
+
 		cfg := RestAPIConfig{
-			KafkaConnectURL: url,
+			KafkaConnectURL: inputURL,
 		}
 
 		if dryRun {
-			color.Cyan("Dry run mode")
+			color.Cyan("Dry run mode — config will not be saved.")
+			color.Cyan("Kafka Connect URL would be: %s", inputURL)
+			return
 		}
 
 		err = saveConfig(cfg, configPath)
@@ -102,6 +126,9 @@ var configureCmd = &cobra.Command{
 			color.Red("Failed to save config file: %s", err)
 			return
 		}
+
+		color.Green("Configuration saved successfully!")
+		color.Green("Kafka Connect URL: %s", inputURL)
 	},
 }
 
