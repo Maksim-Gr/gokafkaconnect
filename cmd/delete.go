@@ -1,13 +1,14 @@
-/*
-Copyright © 2025 NAME HERE <EMAIL ADDRESS>
-*/
 package cmd
 
 import (
-	"fmt"
+	"gokafkaconnect/config"
+	"gokafkaconnect/connector"
 
+	"github.com/fatih/color"
 	"github.com/spf13/cobra"
 )
+
+var connectorName string
 
 // deleteCmd represents the delete command
 var deleteCmd = &cobra.Command{
@@ -15,7 +16,24 @@ var deleteCmd = &cobra.Command{
 	Short: "delete connector",
 	Long:  `Delete connector from Kafka Connect API`,
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("delete called")
+		if connectorName == "" {
+			color.Red("error:  provide connector name")
+			return
+		}
+
+		color.Yellow("Deleting connector: %s", connectorName)
+
+		cfg, err := config.LoadConfig()
+		if err != nil {
+			color.Red("Failed to load config file: %v\n", err)
+			return
+		}
+		err = connector.DeleteConnector(cfg.KafkaConnectURL, connectorName)
+		if err != nil {
+			color.Red("Failed to delete connector: %v\n", err)
+		} else {
+			color.Green("Connector deleted successfully!")
+		}
 	},
 }
 
@@ -31,4 +49,6 @@ func init() {
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:
 	// deleteCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	deleteCmd.Flags().StringVarP(&connectorName, "connector", "c", "", "Connector name to delete")
+	deleteCmd.MarkFlagRequired("connector")
 }
