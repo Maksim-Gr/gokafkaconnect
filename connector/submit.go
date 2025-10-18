@@ -9,7 +9,7 @@ import (
 
 func SubmitConnector(configJson string, kafkaConnectURL string) error {
 
-	url := fmt.Sprintf("%s/connector", kafkaConnectURL)
+	url := fmt.Sprintf("%s/connectors", kafkaConnectURL)
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer([]byte(configJson)))
 	if err != nil {
 		return err

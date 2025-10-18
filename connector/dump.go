@@ -12,7 +12,7 @@ func DumpConnectorConfig(kafkaConnectURL string, connectors []string, outPutFile
 	dumpConfig := make(map[string]map[string]interface{})
 
 	for _, name := range connectors {
-		url := fmt.Sprintf("%s/connector/%s", kafkaConnectURL, name)
+		url := fmt.Sprintf("%s/connectors/%s", kafkaConnectURL, name)
 
 		req, err := http.NewRequest("GET", url, nil)
 		if err != nil {

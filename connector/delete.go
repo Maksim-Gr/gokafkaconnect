@@ -8,7 +8,7 @@ import (
 
 // DeleteConnector delete connector from Kafka Connect API
 func DeleteConnector(kafkaConnectURL string, connector string) error {
-	url := fmt.Sprintf("%s/connector/%s", kafkaConnectURL, connector)
+	url := fmt.Sprintf("%s/connectors/%s", kafkaConnectURL, connector)
 	req, err := http.NewRequest("DELETE", url, nil)
 	if err != nil {
 		return err
