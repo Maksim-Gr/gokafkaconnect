@@ -82,25 +82,43 @@ var configureCmd = &cobra.Command{
 			color.Red("Failed to determine config path: %v", err)
 			os.Exit(1)
 		}
-
+		var currentURL string
 		if currentConfig, err := LoadConfig(); err == nil {
-			color.Yellow("Current URL: %s", currentConfig.KafkaConnectURL)
+			currentURL = currentConfig.KafkaConnectURL
+			color.Yellow("Current URL: %s", currentURL)
 		}
 
 		var inputURL string
 		prompt := &survey.Input{
 			Message: "Kafka Connect URL:",
 			Help:    "Enter the URL of your Kafka Connect REST API (e.g. http://localhost:8083)",
+			Default: currentURL,
 		}
 
-		err = survey.AskOne(prompt, &inputURL,
-			survey.WithValidator(survey.ComposeValidators(
-				survey.Required,
-				func(ans interface{}) error {
-					return validateURL(ans.(string))
-				},
-			)),
-		)
+		err = survey.AskOne(prompt, &inputURL, survey.WithValidator(
+			func(ans interface{}) error {
+				s := ans.(string)
+
+				// If unchanged → OK
+				if s == currentURL {
+					return nil
+				}
+
+				// If empty and no current URL → reject
+				if s == "" && currentURL == "" {
+					return errors.New("URL cannot be empty")
+				}
+
+				// If empty but current URL exists → OK
+				if s == "" {
+					return nil
+				}
+
+				// Validate only new value
+				return validateURL(s)
+			},
+		))
+
 		if err != nil {
 			fmt.Println("Failed:", err)
 			os.Exit(1)
