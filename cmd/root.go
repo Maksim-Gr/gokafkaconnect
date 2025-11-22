@@ -19,7 +19,7 @@ var rootCmd = &cobra.Command{
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
 		color.Blue("\nChecking configuration...\n")
 		cfg, err := LoadConfig()
-		if err != nil || cfg.KafkaConnectURL == "" {
+		if err != nil || cfg.KafkaConnect.URL == "" {
 			color.Yellow("No Kafka Connect URL configured.")
 			color.Cyan("Running initial configuration...\n")
 			configureCmd.Run(cmd, args)

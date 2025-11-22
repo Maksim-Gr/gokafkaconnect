@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"net/url"
@@ -13,10 +12,17 @@ import (
 	"github.com/fatih/color"
 
 	"github.com/spf13/cobra"
+	"gopkg.in/yaml.v3"
 )
 
 type RestAPIConfig struct {
-	KafkaConnectURL string `json:"kafka_connect_url"`
+	KafkaConnect KafkaConnectConfig `yaml:"kafkaConnect"`
+}
+
+type KafkaConnectConfig struct {
+	URL      string `yaml:"url"`
+	Username string `yaml:"username"`
+	Password string `yaml:"password"`
 }
 
 func getExecutablePath() (string, error) {
@@ -32,7 +38,7 @@ func getConfigPath() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return filepath.Join(exe, "config.json"), nil
+	return filepath.Join(exe, "config.yaml"), nil
 }
 
 func validateURL(input string) error {
@@ -82,10 +88,13 @@ var configureCmd = &cobra.Command{
 			color.Red("Failed to determine config path: %v", err)
 			os.Exit(1)
 		}
-		var currentURL string
-		if currentConfig, err := LoadConfig(); err == nil {
-			currentURL = currentConfig.KafkaConnectURL
-			color.Yellow("Current URL: %s", currentURL)
+		var current RestAPIConfig
+		currentURL := ""
+
+		if loaded, err := LoadConfig(); err == nil {
+			current = loaded
+			currentURL = loaded.KafkaConnect.URL
+			color.Yellow("Current Kafka Connect URL: %s", currentURL)
 		}
 
 		var inputURL string
@@ -99,22 +108,18 @@ var configureCmd = &cobra.Command{
 			func(ans interface{}) error {
 				s := ans.(string)
 
-				// If unchanged → OK
 				if s == currentURL {
 					return nil
 				}
 
-				// If empty and no current URL → reject
 				if s == "" && currentURL == "" {
 					return errors.New("URL cannot be empty")
 				}
 
-				// If empty but current URL exists → OK
 				if s == "" {
 					return nil
 				}
 
-				// Validate only new value
 				return validateURL(s)
 			},
 		))
@@ -130,7 +135,11 @@ var configureCmd = &cobra.Command{
 		}
 
 		cfg := RestAPIConfig{
-			KafkaConnectURL: inputURL,
+			KafkaConnect: KafkaConnectConfig{
+				URL:      inputURL,
+				Username: current.KafkaConnect.Username,
+				Password: current.KafkaConnect.Password,
+			},
 		}
 
 		if dryRun {
@@ -158,7 +167,7 @@ func saveConfig(cfg RestAPIConfig, configPath string) error {
 		return err
 	}
 
-	data, err := json.MarshalIndent(cfg, "", "  ")
+	data, err := yaml.Marshal(&cfg)
 	if err != nil {
 		return err
 	}
@@ -166,7 +175,6 @@ func saveConfig(cfg RestAPIConfig, configPath string) error {
 	return os.WriteFile(configPath, data, 0644)
 }
 
-// LoadConfig Load config
 func LoadConfig() (RestAPIConfig, error) {
 	var cfg RestAPIConfig
 	configPath, err := getConfigPath()
@@ -178,7 +186,7 @@ func LoadConfig() (RestAPIConfig, error) {
 	if err != nil {
 		return cfg, err
 	}
-	err = json.Unmarshal(data, &cfg)
+	err = yaml.Unmarshal(data, &cfg)
 	return cfg, err
 }
 

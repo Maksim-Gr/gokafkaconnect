@@ -23,12 +23,12 @@ var dumpCmd = &cobra.Command{
 			color.Red("Failed to load config: %v\n", err)
 			return
 		}
-		connectors, err := connector.ListConnectors(cfg.KafkaConnectURL)
+		connectors, err := connector.ListConnectors(cfg.KafkaConnect.URL)
 		if err != nil {
 			color.Red("Failed to dump  connector config: %v\n", err)
 			return
 		}
-		err = connector.DumpConnectorConfig(cfg.KafkaConnectURL, connectors, outputFile)
+		err = connector.DumpConnectorConfig(cfg.KafkaConnect.URL, connectors, outputFile)
 		if err != nil {
 			color.Red("Failed to dump connector config: %v\n", err)
 			return
