@@ -183,3 +183,28 @@ func TestDumpConnectorConfig(t *testing.T) {
 
 	require.FileExists(t, tempFile)
 }
+
+func TestGetConnectorConfig(t *testing.T) {
+	kc := setupKafkaConnect(t)
+
+	connectorConfig := `{
+		"name": "test-getconfig",
+		"config": {
+			"connector.class": "org.apache.kafka.connect.tools.MockSinkConnector",
+			"tasks.max": "1",
+			"topics": "topic-gc"
+		}
+	}`
+
+	err := SubmitConnector(connectorConfig, kc.URL)
+	require.NoError(t, err)
+
+	configJSON, err := GetConnectorConfig(kc.URL, "test-getconfig")
+	require.NoError(t, err)
+	require.Contains(t, configJSON, `"connector.class"`)
+	require.Contains(t, configJSON, `"MockSinkConnector"`)
+
+	// cleanup
+	err = DeleteConnector(kc.URL, "test-getconfig")
+	require.NoError(t, err)
+}
