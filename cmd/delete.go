@@ -2,7 +2,7 @@ package cmd
 
 import (
 	"gokafkaconnect/config"
-	"gokafkaconnect/connector"
+	"gokafkaconnect/internal/connector"
 
 	"github.com/fatih/color"
 	"github.com/spf13/cobra"
