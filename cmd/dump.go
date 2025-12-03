@@ -5,6 +5,7 @@ package cmd
 
 import (
 	"gokafkaconnect/internal/connector"
+	"gokafkaconnect/internal/util"
 
 	"github.com/fatih/color"
 	"github.com/spf13/cobra"
@@ -18,7 +19,7 @@ var dumpCmd = &cobra.Command{
 	Short: "Dump connectors config from Kafka Connect API",
 	Long:  `Dump connectors config from Kafka Connect API and save to file for future usage `,
 	Run: func(cmd *cobra.Command, args []string) {
-		cfg, err := LoadConfig()
+		cfg, err := util.LoadConfig()
 		if err != nil {
 			color.Red("Failed to load config: %v\n", err)
 			return

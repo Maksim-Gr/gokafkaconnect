@@ -6,6 +6,7 @@ import (
 	"github.com/fatih/color"
 
 	"github.com/spf13/cobra"
+	"gokafkaconnect/internal/util"
 )
 
 var dryRun bool
@@ -18,7 +19,7 @@ var rootCmd = &cobra.Command{
 	Manage, create, and list predefined connector in seconds!`,
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
 		color.Blue("\nChecking configuration...\n")
-		cfg, err := LoadConfig()
+		cfg, err := util.LoadConfig()
 		if err != nil || cfg.KafkaConnect.URL == "" {
 			color.Yellow("No Kafka Connect URL configured.")
 			color.Cyan("Running initial configuration...\n")
