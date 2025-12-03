@@ -1,4 +1,4 @@
-package rabbitmq
+package templates
 
 var defaultRedisConfig = map[string]string{
 	"connector.class":                       "com.ibm.eventstreams.connect.rabbitmqsource.RabbitMQSourceConnector",

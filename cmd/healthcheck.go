@@ -3,8 +3,8 @@ package cmd
 import (
 	"encoding/json"
 	"fmt"
-	"gokafkaconnect/config"
-	"gokafkaconnect/connector"
+	"gokafkaconnect/internal/config"
+	"gokafkaconnect/internal/connector"
 
 	"github.com/fatih/color"
 	"github.com/spf13/cobra"

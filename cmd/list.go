@@ -2,8 +2,8 @@ package cmd
 
 import (
 	"fmt"
-	"gokafkaconnect/config"
-	"gokafkaconnect/connector"
+	"gokafkaconnect/internal/config"
+	"gokafkaconnect/internal/connector"
 
 	"github.com/AlecAivazis/survey/v2"
 	"github.com/fatih/color"

@@ -1,7 +1,7 @@
 package cmd
 
 import (
-	"gokafkaconnect/config"
+	"gokafkaconnect/internal/config"
 	"gokafkaconnect/internal/connector"
 
 	"github.com/fatih/color"

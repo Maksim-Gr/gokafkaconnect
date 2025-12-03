@@ -2,9 +2,9 @@ package cmd
 
 import (
 	"fmt"
-	"gokafkaconnect/config"
-	"gokafkaconnect/connector"
-	"gokafkaconnect/connector/rabbitmq"
+	"gokafkaconnect/internal/config"
+	"gokafkaconnect/internal/connector"
+	template "gokafkaconnect/internal/connector/kafka/templates"
 	"gokafkaconnect/internal/util"
 
 	"github.com/AlecAivazis/survey/v2"
@@ -46,10 +46,10 @@ var createCmd = &cobra.Command{
 func configureRedisConnector() {
 	color.Yellow("\n  Starting configuration for Redis Connector...\n")
 
-	connectorConfig := rabbitmq.GetRedisConnectorTemplate()
+	connectorConfig := template.GetRedisConnectorTemplate()
 
 	var questions []*survey.Question
-	for _, field := range rabbitmq.RequiredFields() {
+	for _, field := range template.RequiredFields() {
 		var prompt survey.Prompt
 		if field == "rabbitmq.password" {
 			prompt = &survey.Password{Message: fmt.Sprintf("Enter %s:", field)}

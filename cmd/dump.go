@@ -4,7 +4,7 @@ Copyright © 2025 NAME HERE <EMAIL ADDRESS>
 package cmd
 
 import (
-	"gokafkaconnect/connector"
+	"gokafkaconnect/internal/connector"
 
 	"github.com/fatih/color"
 	"github.com/spf13/cobra"
