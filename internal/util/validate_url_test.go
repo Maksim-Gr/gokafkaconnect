@@ -1,4 +1,4 @@
-package cmd
+package util
 
 import "testing"
 
@@ -26,7 +26,7 @@ func TestValidateURL(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := validateURL(tt.input)
+			err := ValidateURL(tt.input)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("validateURL(%q) error = %v, wantErr %v", tt.input, err, tt.wantErr)
 			}

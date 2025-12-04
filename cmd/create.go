@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"gokafkaconnect/internal/config"
 	"gokafkaconnect/internal/connector"
 	template "gokafkaconnect/internal/connector/kafka/templates"
 	"gokafkaconnect/internal/util"
@@ -137,12 +136,12 @@ func configureRedisConnector() {
 
 	if submitConfirm {
 		color.Green("\n Submitting connector...\n")
-		cfg, err := config.LoadConfig()
+		cfg, err := util.LoadConfig()
 		if err != nil {
 			color.Red("Failed to load config file: %v\n", err)
 			return
 		}
-		err = connector.SubmitConnector(finalConfig, cfg.KafkaConnectURL)
+		err = connector.SubmitConnector(finalConfig, cfg.KafkaConnect.URL)
 		if err != nil {
 			color.Red("Failed to submit connector: %v\n", err)
 		} else {

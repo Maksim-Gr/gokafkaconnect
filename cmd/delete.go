@@ -1,8 +1,8 @@
 package cmd
 
 import (
-	"gokafkaconnect/internal/config"
 	"gokafkaconnect/internal/connector"
+	"gokafkaconnect/internal/util"
 
 	"github.com/fatih/color"
 	"github.com/spf13/cobra"
@@ -23,12 +23,12 @@ var deleteCmd = &cobra.Command{
 
 		color.Yellow("Deleting connector: %s", connectorName)
 
-		cfg, err := config.LoadConfig()
+		cfg, err := util.LoadConfig()
 		if err != nil {
 			color.Red("Failed to load config file: %v\n", err)
 			return
 		}
-		err = connector.DeleteConnector(cfg.KafkaConnectURL, connectorName)
+		err = connector.DeleteConnector(cfg.KafkaConnect.URL, connectorName)
 		if err != nil {
 			color.Red("Failed to delete connector: %v\n", err)
 		} else {

@@ -2,8 +2,8 @@ package cmd
 
 import (
 	"fmt"
-	"gokafkaconnect/internal/config"
 	"gokafkaconnect/internal/connector"
+	"gokafkaconnect/internal/util"
 
 	"github.com/AlecAivazis/survey/v2"
 	"github.com/fatih/color"
@@ -16,12 +16,12 @@ var listCmd = &cobra.Command{
 	Short: "List running connector",
 	Long:  `List current running connector`,
 	Run: func(cmd *cobra.Command, args []string) {
-		cfg, err := config.LoadConfig()
+		cfg, err := util.LoadConfig()
 		if err != nil {
 			color.Red("Failed to load config: %v\n", err)
 			return
 		}
-		connectors, err := connector.ListConnectors(cfg.KafkaConnectURL)
+		connectors, err := connector.ListConnectors(cfg.KafkaConnect.URL)
 		if err != nil {
 			color.Red("Failed to list connector: %v\n", err)
 			return
@@ -46,7 +46,7 @@ var listCmd = &cobra.Command{
 			color.Red("canceled\n", err)
 		}
 
-		config, err := connector.GetConnectorConfig(cfg.KafkaConnectURL, selected)
+		config, err := connector.GetConnectorConfig(cfg.KafkaConnect.URL, selected)
 		if err != nil {
 			color.Red("Failed to get connector config: %v\n", err)
 			return
