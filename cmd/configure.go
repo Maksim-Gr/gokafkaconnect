@@ -3,70 +3,16 @@ package cmd
 import (
 	"errors"
 	"fmt"
-	"net/url"
 	"os"
-	"path/filepath"
 	"strings"
+
+	"gokafkaconnect/internal/util"
 
 	"github.com/AlecAivazis/survey/v2"
 	"github.com/fatih/color"
 
 	"github.com/spf13/cobra"
-	"gopkg.in/yaml.v3"
 )
-
-type RestAPIConfig struct {
-	KafkaConnect KafkaConnectConfig `yaml:"kafkaConnect"`
-}
-
-type KafkaConnectConfig struct {
-	URL      string `yaml:"url"`
-	Username string `yaml:"username"`
-	Password string `yaml:"password"`
-}
-
-func getExecutablePath() (string, error) {
-	exe, err := os.Executable()
-	if err != nil {
-		return "", err
-	}
-	return filepath.Dir(exe), nil
-}
-
-func getConfigPath() (string, error) {
-	exe, err := getExecutablePath()
-	if err != nil {
-		return "", err
-	}
-	return filepath.Join(exe, "config.yaml"), nil
-}
-
-func validateURL(input string) error {
-	if input == "" {
-		return errors.New("URL cannot be empty")
-	}
-
-	testURL := input
-	if !strings.HasPrefix(input, "http://") && !strings.HasPrefix(input, "https://") {
-		testURL = "http://" + input
-	}
-
-	parsed, err := url.ParseRequestURI(testURL)
-	if err != nil {
-		return errors.New("invalid URL format")
-	}
-
-	if parsed.Host == "" {
-		return errors.New("URL must contain a host (e.g. localhost:8083 or example.com)")
-	}
-
-	host := parsed.Hostname()
-	if !strings.Contains(host, ".") && !strings.Contains(host, ":") && host != "localhost" {
-		return fmt.Errorf("invalid host: %s (must include '.' or ':' or be 'localhost')", host)
-	}
-
-	return nil
-}
 
 //var configPath = filepath.Join(os.Getenv("HOME"), ".gokafkacon", "config.json")
 
@@ -83,15 +29,15 @@ var configureCmd = &cobra.Command{
 			color.Cyan("\nConfiguring Kafka Connect URL...\n")
 		}
 
-		configPath, err := getConfigPath()
+		configPath, err := util.GetConfigPath()
 		if err != nil {
 			color.Red("Failed to determine config path: %v", err)
 			os.Exit(1)
 		}
-		var current RestAPIConfig
+		var current util.RestAPIConfig
 		currentURL := ""
 
-		if loaded, err := LoadConfig(); err == nil {
+		if loaded, err := util.LoadConfig(); err == nil {
 			current = loaded
 			currentURL = loaded.KafkaConnect.URL
 			color.Yellow("Current Kafka Connect URL: %s", currentURL)
@@ -120,7 +66,7 @@ var configureCmd = &cobra.Command{
 					return nil
 				}
 
-				return validateURL(s)
+				return util.ValidateURL(s)
 			},
 		))
 
@@ -134,8 +80,8 @@ var configureCmd = &cobra.Command{
 			inputURL = "http://" + inputURL
 		}
 
-		cfg := RestAPIConfig{
-			KafkaConnect: KafkaConnectConfig{
+		cfg := util.RestAPIConfig{
+			KafkaConnect: util.KafkaConnectConfig{
 				URL:      inputURL,
 				Username: current.KafkaConnect.Username,
 				Password: current.KafkaConnect.Password,
@@ -148,7 +94,7 @@ var configureCmd = &cobra.Command{
 			return
 		}
 
-		err = saveConfig(cfg, configPath)
+		err = util.SaveConfig(cfg, configPath)
 		if err != nil {
 			color.Red("Failed to save config file: %s", err)
 			return
@@ -157,37 +103,6 @@ var configureCmd = &cobra.Command{
 		color.Green("Configuration saved successfully!")
 		color.Green("Kafka Connect URL: %s", inputURL)
 	},
-}
-
-// Save config to file
-func saveConfig(cfg RestAPIConfig, configPath string) error {
-	// Create a directory if not exists
-	err := os.MkdirAll(filepath.Dir(configPath), os.ModePerm)
-	if err != nil {
-		return err
-	}
-
-	data, err := yaml.Marshal(&cfg)
-	if err != nil {
-		return err
-	}
-
-	return os.WriteFile(configPath, data, 0644)
-}
-
-func LoadConfig() (RestAPIConfig, error) {
-	var cfg RestAPIConfig
-	configPath, err := getConfigPath()
-	if err != nil {
-		return cfg, err
-	}
-
-	data, err := os.ReadFile(configPath)
-	if err != nil {
-		return cfg, err
-	}
-	err = yaml.Unmarshal(data, &cfg)
-	return cfg, err
 }
 
 func init() {

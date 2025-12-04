@@ -3,6 +3,9 @@ package cmd
 import (
 	"encoding/json"
 	"fmt"
+
+	"gokafkaconnect/internal/util"
+
 	"github.com/fatih/color"
 	"github.com/spf13/cobra"
 )
@@ -13,7 +16,7 @@ var showConfigCmd = &cobra.Command{
 	Short: "Display API endpoint",
 	Long:  `Display Kafka Connect API endpoint.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		cfg, err := LoadConfig()
+		cfg, err := util.LoadConfig()
 		if err != nil {
 			color.Red("Failed to load config: %v\n", err)
 			return
