@@ -14,6 +14,7 @@ import (
 	"github.com/testcontainers/testcontainers-go/wait"
 )
 
+// WaitForKafkaConnectStartUp polls the /connector-plugins endpoint to ensure Kafka Connect is fully initialized.
 func WaitForKafkaConnectStartUp(t *testing.T, baseURL string, timeout time.Duration) {
 	t.Helper()
 
@@ -39,20 +40,20 @@ func WaitForKafkaConnectStartUp(t *testing.T, baseURL string, timeout time.Durat
 
 }
 
-type KafkaConnectContainer struct {
+type KafkaConnectTestFixture struct {
 	Container testcontainers.Container
 	URL       string
 }
 
-func KafkaConnectFixture(t *testing.T) KafkaConnectContainer {
+func KafkaConnectFixture(t *testing.T) *KafkaConnectTestFixture {
 	t.Helper()
 	ctx := context.Background()
 
 	nw, err := network.New(ctx)
-
 	require.NoError(t, err)
 	t.Cleanup(func() { _ = nw.Remove(ctx) })
 
+	// Zookeeper Setup
 	zooReq := testcontainers.ContainerRequest{
 		Image:        "confluentinc/cp-zookeeper:7.2.0",
 		ExposedPorts: []string{"2181/tcp"},
@@ -71,6 +72,7 @@ func KafkaConnectFixture(t *testing.T) KafkaConnectContainer {
 	require.NoError(t, err)
 	t.Cleanup(func() { _ = zooC.Terminate(ctx) })
 
+	// Kafka Broker Setup
 	kafkaReq := testcontainers.ContainerRequest{
 		Image:        "confluentinc/cp-kafka:7.2.0",
 		ExposedPorts: []string{"9092/tcp"},
@@ -93,6 +95,7 @@ func KafkaConnectFixture(t *testing.T) KafkaConnectContainer {
 	require.NoError(t, err)
 	t.Cleanup(func() { _ = kafkaC.Terminate(ctx) })
 
+	// Kafka Connect Setup
 	connectReq := testcontainers.ContainerRequest{
 		Image:        "confluentinc/cp-kafka-connect:7.5.0",
 		ExposedPorts: []string{"8083/tcp"},
@@ -134,7 +137,7 @@ func KafkaConnectFixture(t *testing.T) KafkaConnectContainer {
 	connectURL := fmt.Sprintf("http://%s:%s", connectHost, connectPort.Port())
 	WaitForKafkaConnectStartUp(t, connectURL, 20*time.Second)
 
-	return KafkaConnectContainer{
+	return &KafkaConnectTestFixture{ // Return pointer
 		Container: connectC,
 		URL:       connectURL,
 	}

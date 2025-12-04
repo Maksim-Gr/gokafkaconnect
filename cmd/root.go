@@ -5,8 +5,9 @@ import (
 
 	"github.com/fatih/color"
 
-	"github.com/spf13/cobra"
 	"gokafkaconnect/internal/util"
+
+	"github.com/spf13/cobra"
 )
 
 var dryRun bool
