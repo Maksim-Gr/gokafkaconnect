@@ -35,7 +35,7 @@ go build -o gokafkaconnect
 ## 🛠 Planned Features
 
 - [x] Create connector from template
-- [ ] Delete existing connectors
+- [x] Delete existing connectors
 - [ ] Update connector configurations
 - [ ] Dynamic connector loading from YAML/JSON
 - [x] Kafka Connect REST API integration
