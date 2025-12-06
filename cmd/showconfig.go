@@ -22,7 +22,7 @@ var showConfigCmd = &cobra.Command{
 			return
 		}
 
-		color.Cyan("\n📋 Current Configuration:")
+		color.Cyan("Current Configuration:")
 		data, err := json.MarshalIndent(cfg, "", "  ")
 		if err != nil {
 			color.Red("Failed to format config: %v\n", err)

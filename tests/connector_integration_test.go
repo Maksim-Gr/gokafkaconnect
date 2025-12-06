@@ -3,6 +3,7 @@ package tests
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"testing"
 	"time"
 
@@ -76,13 +77,21 @@ func TestConnectorLifecycle(t *testing.T) {
 		}
 	})
 
-	t.Run("DumpConfig", func(t *testing.T) {
-		tempFile := os.TempDir() + "/connector-config.json"
-		defer os.Remove(tempFile)
+	t.Run("BackupConnectorConfig", func(t *testing.T) {
+		outputDir := os.TempDir()
 
-		err := c.DumpConnectorConfig(kc.URL, connectorNames[:2], tempFile)
-		require.NoError(t, err)
-		require.FileExists(t, tempFile)
+		backupFile, err := c.BackupConnectorConfig(kc.URL, connectorNames[:2], outputDir)
+		require.NoError(t, err, "BackupConnectorConfig should not return an error")
+
+		require.FileExists(t, backupFile, "Backup file should exist")
+
+		require.Contains(t, filepath.Base(backupFile), "config_", "Backup file name should contain 'config_' prefix")
+
+		defer func() {
+			if err := os.Remove(backupFile); err != nil && !os.IsNotExist(err) {
+				t.Logf("failed to remove backup file: %v", err)
+			}
+		}()
 	})
 
 	t.Run("DeleteOne", func(t *testing.T) {
@@ -101,24 +110,6 @@ func TestConnectorLifecycle(t *testing.T) {
 		require.Error(t, err)
 		require.Contains(t, err.Error(), "failed to delete connector")
 	})
-}
-
-func TestDumpConnectorConfig_Single(t *testing.T) {
-	kc := KafkaConnectFixture(t)
-
-	connectorName := "test-dump-single"
-	topic := "test-topic-ds"
-	defer cleanupConnectors(t, kc, []string{connectorName})
-
-	config := fmt.Sprintf(mockSinkConfigTemplate, connectorName, topic)
-
-	require.NoError(t, c.SubmitConnector(config, kc.URL))
-
-	tempFile := os.TempDir() + "/connector-dump.json"
-	defer os.Remove(tempFile)
-
-	require.NoError(t, c.DumpConnectorConfig(kc.URL, []string{connectorName}, tempFile))
-	require.FileExists(t, tempFile)
 }
 
 func TestGetConnectorConfig(t *testing.T) {
