@@ -1,6 +1,3 @@
-/*
-Copyright © 2025 NAME HERE <EMAIL ADDRESS>
-*/
 package cmd
 
 import (
@@ -42,7 +39,7 @@ func init() {
 
 	// Here you will define your flags and configuration settings.
 
-	// Cobra supports Persistent Flags which will work for this command
+	// Cobra supports Persistent Flags, which will work for this command
 	// and all subcommands, e.g.:
 	// dumpCmd.PersistentFlags().String("foo", "", "A help for foo")
 
