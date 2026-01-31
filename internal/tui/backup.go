@@ -3,6 +3,7 @@ package tui
 import (
 	"gokafkaconnect/internal/connector"
 	"gokafkaconnect/internal/util"
+	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
 )
@@ -14,6 +15,7 @@ type backupDoneMsg struct {
 
 func runBackup(dir string) tea.Cmd {
 	return func() tea.Msg {
+		time.Sleep(10 * time.Second)
 		cfg, err := util.LoadConfig()
 		if err != nil {
 			return backupDoneMsg{err: err}

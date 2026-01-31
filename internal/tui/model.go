@@ -28,7 +28,7 @@ func New(backupDir string) Model {
 }
 
 func (m Model) Init() tea.Cmd {
-	return nil
+	return m.spinner.Tick
 }
 
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -44,22 +44,21 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.loading = true
 			m.status = "Backing up..."
 			m.err = nil
-			return m, tea.Batch(m.spinner.Tick, runBackup(m.backupDir))
+			return m, runBackup(m.backupDir)
 		}
 
 	case spinner.TickMsg:
-		if m.loading {
-			var cmd tea.Cmd
-			m.spinner, cmd = m.spinner.Update(msg)
-			return m, cmd
-		}
+		var cmd tea.Cmd
+		m.spinner, cmd = m.spinner.Update(msg)
+		return m, cmd
+
 	case backupDoneMsg:
 		m.loading = false
 		if msg.err != nil {
 			m.status = "Backup failed"
 			m.err = msg.err
 		} else {
-			m.status = "Backup created: "
+			m.status = "Backup created"
 		}
 	}
 
