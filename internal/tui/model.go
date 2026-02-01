@@ -2,6 +2,7 @@ package tui
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/charmbracelet/bubbles/spinner"
 	tea "github.com/charmbracelet/bubbletea"
@@ -14,6 +15,9 @@ type Model struct {
 	loading   bool
 	spinner   spinner.Model
 	err       error
+
+	width  int
+	height int
 }
 
 func New(backupDir string) Model {
@@ -34,9 +38,13 @@ func (m Model) Init() tea.Cmd {
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 
+	case tea.WindowSizeMsg:
+		m.width = msg.Width
+		m.height = msg.Height
+		return m, nil
+
 	case tea.KeyMsg:
 		switch msg.String() {
-
 		case "q", "ctrl+c":
 			return m, tea.Quit
 
@@ -44,7 +52,10 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.loading = true
 			m.status = "Backing up..."
 			m.err = nil
-			return m, runBackup(m.backupDir)
+			return m, tea.Batch(
+				m.spinner.Tick,
+				runBackup(m.backupDir),
+			)
 		}
 
 	case spinner.TickMsg:
@@ -61,16 +72,21 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.status = "Backup created"
 		}
 	}
-
 	return m, nil
 }
 
 func (m Model) View() string {
-	header := titleStyle.Render(" Kafka Connect Backup ")
+	if m.width == 0 {
+		return "Loading..."
+	}
+
+	header := titleStyle.
+		Width(m.width).
+		Render(" Kafka Connect Backup ")
 
 	divider := lipgloss.NewStyle().
 		Foreground(lipgloss.Color("238")).
-		Render("────────────────────────────────────────────")
+		Render(strings.Repeat("─", m.width))
 
 	var status string
 	switch {
@@ -80,22 +96,26 @@ func (m Model) View() string {
 		status = statusRunningStyle.Render(
 			fmt.Sprintf("%s %s", m.spinner.View(), m.status),
 		)
-	case m.status == "Backup created":
-		status = statusSuccessStyle.Render(m.status)
 	default:
 		status = statusIdleStyle.Render(m.status)
 	}
 
-	body := panelStyle.Render(
-		lipgloss.JoinVertical(
-			lipgloss.Left,
-			"Status:",
-			"",
-			status,
-		),
-	)
+	body := panelStyle.
+		Width(m.width).
+		Height(m.height - 5).
+		Render(
+			lipgloss.Place(
+				m.width,
+				m.height-5,
+				lipgloss.Left,
+				lipgloss.Top,
+				"Status:\n\n"+status,
+			),
+		)
 
-	footer := footerStyle.Render(" b:Backup   q:Quit ")
+	footer := footerStyle.
+		Width(m.width).
+		Render(" b:backup   q:quit ")
 
 	return lipgloss.JoinVertical(
 		lipgloss.Left,
