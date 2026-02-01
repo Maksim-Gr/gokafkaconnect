@@ -7,6 +7,8 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"path/filepath"
+	"time"
 )
 
 func ListConnectors(kafkaConnectURL string) ([]string, error) {
@@ -109,48 +111,51 @@ func SubmitConnector(configJson string, kafkaConnectURL string) error {
 	return fmt.Errorf("failed to submit connector configuration: %s", string(body))
 }
 
-func DumpConnectorConfig(kafkaConnectURL string, connectors []string, outPutFile string) error {
+func BackupConnectorConfig(kafkaConnectURL string, connectors []string, outputDir string) (string, error) {
 	dumpConfig := make(map[string]map[string]interface{})
 
 	for _, name := range connectors {
-		url := fmt.Sprintf("%s/connectors/%s", kafkaConnectURL, name)
+		url := fmt.Sprintf("%s/connectors/%s/config", kafkaConnectURL, name)
 
-		req, err := http.NewRequest("GET", url, nil)
+		resp, err := http.Get(url)
 		if err != nil {
-			return fmt.Errorf("failed to create request: %s", err)
+			return "", fmt.Errorf("failed to connect to %s: %s", url, err)
 		}
-		req.Header.Set("Content-Type", "application/json")
-
-		client := &http.Client{}
-		resp, err := client.Do(req)
-		if err != nil {
-			return fmt.Errorf("failed to connect to %s: %s", url, err)
-		}
-		defer resp.Body.Close() //nolint:errcheck
+		defer resp.Body.Close()
 
 		if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 			body, _ := io.ReadAll(resp.Body)
-			return fmt.Errorf("failed to connect to %s: %s", url, string(body))
+			return "", fmt.Errorf("failed to connect to %s: %s", url, string(body))
 		}
 
 		var config map[string]interface{}
 		if err := json.NewDecoder(resp.Body).Decode(&config); err != nil {
-			return fmt.Errorf("failed to decode config: %s: %w", name, err)
+			return "", fmt.Errorf("failed to decode config for %s: %w", name, err)
 		}
+
 		dumpConfig[name] = config
 	}
-	file, err := os.Create(outPutFile)
-	if err != nil {
-		return fmt.Errorf("failed to create file: %s", err)
+
+	if err := os.MkdirAll(outputDir, 0o755); err != nil {
+		return "", fmt.Errorf("failed to create directory: %w", err)
 	}
-	defer file.Close() //nolint:errcheck
+
+	timestamp := time.Now().Format("20060102_150405")
+	outputFile := filepath.Join(outputDir, fmt.Sprintf("config_%s.json", timestamp))
+
+	file, err := os.Create(outputFile)
+	if err != nil {
+		return "", fmt.Errorf("failed to create file: %w", err)
+	}
+	defer file.Close()
 
 	encoder := json.NewEncoder(file)
 	encoder.SetIndent("", "  ")
 	if err := encoder.Encode(dumpConfig); err != nil {
-		return fmt.Errorf("failed to encode config: %s", err)
+		return "", fmt.Errorf("failed to encode config: %w", err)
 	}
-	return nil
+
+	return outputFile, nil
 }
 
 func GetConnectorConfig(kafkaConnectURL, name string) (string, error) {
