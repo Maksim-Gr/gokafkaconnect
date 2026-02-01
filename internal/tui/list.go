@@ -1,21 +1,16 @@
 package tui
 
 import (
+	"strings"
+
 	"gokafkaconnect/internal/connector"
 	"gokafkaconnect/internal/util"
-	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-type backupDoneMsg struct {
-	file string
-	err  error
-}
-
-func runBackup(dir string) tea.Cmd {
+func runListConnectors() tea.Cmd {
 	return func() tea.Msg {
-		time.Sleep(10 * time.Second)
 		cfg, err := util.LoadConfig()
 		if err != nil {
 			return commandDoneMsg{err: err}
@@ -26,7 +21,12 @@ func runBackup(dir string) tea.Cmd {
 			return commandDoneMsg{err: err}
 		}
 
-		file, err := connector.BackupConnectorConfig(cfg.KafkaConnect.URL, connectors, dir)
-		return commandDoneMsg{result: file, err: err}
+		if len(connectors) == 0 {
+			return commandDoneMsg{result: "No connectors found"}
+		}
+
+		return commandDoneMsg{
+			result: strings.Join(connectors, "\n"),
+		}
 	}
 }
