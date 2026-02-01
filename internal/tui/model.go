@@ -95,7 +95,7 @@ func (m Model) View() string {
 		),
 	)
 
-	footer := footerStyle.Render(" B:Backup   Q:Quit ")
+	footer := footerStyle.Render(" b:Backup   q:Quit ")
 
 	return lipgloss.JoinVertical(
 		lipgloss.Left,
