@@ -66,31 +66,43 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m Model) View() string {
-	title := titleStyle.Render("Kafka Connect Backup")
+	header := titleStyle.Render(" Kafka Connect Backup ")
 
-	var statusLine string
-	if m.loading {
-		statusLine = fmt.Sprintf("%s %s", m.spinner.View(), m.status)
-	} else {
-		statusLine = m.status
+	divider := lipgloss.NewStyle().
+		Foreground(lipgloss.Color("238")).
+		Render("────────────────────────────────────────────")
+
+	var status string
+	switch {
+	case m.err != nil:
+		status = statusErrorStyle.Render(m.err.Error())
+	case m.loading:
+		status = statusRunningStyle.Render(
+			fmt.Sprintf("%s %s", m.spinner.View(), m.status),
+		)
+	case m.status == "Backup created":
+		status = statusSuccessStyle.Render(m.status)
+	default:
+		status = statusIdleStyle.Render(m.status)
 	}
 
-	if m.err != nil {
-		statusLine = errorStyle.Render(m.err.Error())
-	}
-
-	panel := panelStyle.Render(
-		fmt.Sprintf("Status:\n\n%s", statusLine),
+	body := panelStyle.Render(
+		lipgloss.JoinVertical(
+			lipgloss.Left,
+			"Status:",
+			"",
+			status,
+		),
 	)
 
-	footer := footerStyle.Render("[B] Backup   [Q] Quit")
+	footer := footerStyle.Render(" B:Backup   Q:Quit ")
 
 	return lipgloss.JoinVertical(
 		lipgloss.Left,
-		title,
-		"",
-		panel,
-		"",
+		header,
+		divider,
+		body,
+		divider,
 		footer,
 	)
 }
