@@ -14,9 +14,9 @@ var dryRun bool
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
-	Use:   "gokafkaconnect",
+	Use:   "gk",
 	Short: "CLI to manage Kafka connector fast and easy!",
-	Long: `gokafkaconnect - cli tool for working  with Kafka Connect.
+	Long: `gk - cli tool for working  with Kafka Connect.
 	Manage, create, and list predefined connector in seconds!`,
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
 		color.Blue("\nChecking configuration...\n")
