@@ -46,5 +46,5 @@ func init() {
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:
 	// dumpCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
-	backupCmd.Flags().StringVarP(&backupDir, "dir", "d", "./backup", "Directory to save backup files")
+	backupCmd.Flags().StringVarP(&backupDir, "dir", "o", "./backup", "Directory to save backup files")
 }
