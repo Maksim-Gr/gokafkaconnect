@@ -30,6 +30,14 @@ func ToJSON(config map[string]string) (string, error) {
 	return string(out), nil
 }
 
+func ToPrettyJSON(v interface{}) (string, error) {
+	b, err := json.MarshalIndent(v, "", "  ")
+	if err != nil {
+		return "", err
+	}
+	return string(b), nil
+}
+
 func getExecutablePath() (string, error) {
 	exe, err := os.Executable()
 	if err != nil {

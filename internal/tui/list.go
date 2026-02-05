@@ -15,8 +15,8 @@ func runListConnectors() tea.Cmd {
 		if err != nil {
 			return commandDoneMsg{err: err}
 		}
-
-		connectors, err := connector.ListConnectors(cfg.KafkaConnect.URL)
+		client := connector.NewClient(cfg.KafkaConnect.URL)
+		connectors, err := client.ListConnectors()
 		if err != nil {
 			return commandDoneMsg{err: err}
 		}

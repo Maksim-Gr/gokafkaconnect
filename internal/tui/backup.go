@@ -20,13 +20,13 @@ func runBackup(dir string) tea.Cmd {
 		if err != nil {
 			return commandDoneMsg{err: err}
 		}
-
-		connectors, err := connector.ListConnectors(cfg.KafkaConnect.URL)
+		client := connector.NewClient(cfg.KafkaConnect.URL)
+		connectors, err := client.ListConnectors()
 		if err != nil {
 			return commandDoneMsg{err: err}
 		}
 
-		file, err := connector.BackupConnectorConfig(cfg.KafkaConnect.URL, connectors, dir)
+		file, err := connector.BackupConnectorConfig(client, connectors, dir)
 		return commandDoneMsg{result: file, err: err}
 	}
 }

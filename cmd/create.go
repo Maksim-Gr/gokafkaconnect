@@ -36,7 +36,7 @@ var createCmd = &cobra.Command{
 			return
 		}
 		color.Green("\n You selected: %s\n", selected)
-		if selected == "🐇 RabbitMQ Connector" {
+		if selected == "RabbitMQ Connector" {
 			configureRedisConnector()
 		}
 	},
@@ -76,7 +76,7 @@ func configureRedisConnector() {
 	}
 
 	for {
-		finalConfig, _ := util.ToJSON(connectorConfig)
+		finalConfig, _ := util.ToPrettyJSON(connectorConfig)
 		color.Cyan("\n Current Redis Connector Configuration:\n")
 		fmt.Println(finalConfig)
 
@@ -120,7 +120,7 @@ func configureRedisConnector() {
 		connectorConfig[fieldToChange] = newValue
 
 	}
-	finalConfig, _ := util.ToJSON(connectorConfig)
+	finalConfig, _ := util.ToPrettyJSON(connectorConfig)
 	color.Cyan("\nFinal Redis Connector Configuration:\n")
 	fmt.Println(finalConfig)
 

@@ -15,12 +15,14 @@ import (
 func runHealthcheck() tea.Cmd {
 	return func() tea.Msg {
 		cfg, err := util.LoadConfig()
+
 		if err != nil {
 			return commandDoneMsg{err: err}
 		}
 
+		client := connector.NewClient(cfg.KafkaConnect.URL)
 		// Get raw statuses
-		rawStatuses, err := connector.ListConnectorStatuses(cfg.KafkaConnect.URL)
+		rawStatuses, err := client.ListConnectorStatuses()
 		if err != nil {
 			return commandDoneMsg{err: err}
 		}
