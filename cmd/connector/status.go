@@ -1,4 +1,4 @@
-package cmd
+package connector
 
 import (
 	"encoding/json"
@@ -11,7 +11,7 @@ import (
 )
 
 // health-check show statuses for connectors
-var healthCheck = &cobra.Command{
+var HealthCheckCmd = &cobra.Command{
 	Use:   "health-check",
 	Short: "Show connector statuses",
 	Long:  `Show each connector status`,
@@ -45,18 +45,4 @@ var healthCheck = &cobra.Command{
 			fmt.Printf("\t%s - Status: %s\n", name, status.Connector.State)
 		}
 	},
-}
-
-func init() {
-	rootCmd.AddCommand(healthCheck)
-
-	// Here you will define your flags and configuration settings.
-
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// statCmd.PersistentFlags().String("foo", "", "A help for foo")
-
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// statCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }

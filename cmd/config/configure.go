@@ -1,4 +1,4 @@
-package cmd
+package config
 
 import (
 	"errors"
@@ -14,10 +14,12 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var dryRun bool
+
 //var configPath = filepath.Join(os.Getenv("HOME"), ".gokafkacon", "config.json")
 
-// configureCmd represents the configure command
-var configureCmd = &cobra.Command{
+// ConfigureCmd represents the configure command
+var ConfigureCmd = &cobra.Command{
 	Use:   "configure",
 	Short: "Set Kafka connect URL",
 	Long:  `Configure and set Kafka Connect REST API URL.`,
@@ -105,7 +107,6 @@ var configureCmd = &cobra.Command{
 	},
 }
 
-func init() {
-	rootCmd.AddCommand(configureCmd)
-
+func SetDryRun(value bool) {
+	dryRun = value
 }

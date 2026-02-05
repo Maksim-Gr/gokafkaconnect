@@ -1,4 +1,4 @@
-package cmd
+package config
 
 import (
 	"gokafkaconnect/internal/connector"
@@ -10,7 +10,7 @@ import (
 
 var backupDir string
 
-var backupCmd = &cobra.Command{
+var BackupCmd = &cobra.Command{
 	Use:   "backup",
 	Short: "Backup connectors config from Kafka Connect API",
 	Long:  `Backup connectors config from Kafka Connect API and save to file for future usage `,
@@ -37,16 +37,5 @@ var backupCmd = &cobra.Command{
 }
 
 func init() {
-	rootCmd.AddCommand(backupCmd)
-
-	// Here you will define your flags and configuration settings.
-
-	// Cobra supports Persistent Flags, which will work for this command
-	// and all subcommands, e.g.:
-	// dumpCmd.PersistentFlags().String("foo", "", "A help for foo")
-
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// dumpCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
-	backupCmd.Flags().StringVarP(&backupDir, "dir", "o", "./backup", "Directory to save backup files")
+	BackupCmd.Flags().StringVarP(&backupDir, "dir", "o", "./backup", "Directory to save backup files")
 }

@@ -1,4 +1,4 @@
-package cmd
+package connector
 
 import (
 	"fmt"
@@ -18,8 +18,8 @@ var connectors = []string{
 	"️Iceberg Connector",
 }
 
-// createCmd represents the create command
-var createCmd = &cobra.Command{
+// CreateCmd represents the create command
+var CreateCmd = &cobra.Command{
 	Use:   "create",
 	Short: "Create a connector from predefined configuration  ",
 	Long:  `Browse predefined connector.`,
@@ -155,8 +155,4 @@ func configureRedisConnector() {
 		color.Yellow("\n Submission cancelled. Exiting.\n")
 	}
 
-}
-
-func init() {
-	rootCmd.AddCommand(createCmd)
 }

@@ -1,4 +1,4 @@
-package cmd
+package connector
 
 import (
 	"fmt"
@@ -10,8 +10,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// listCmd represent command for retrieving connectors from API
-var listCmd = &cobra.Command{
+// ListCmd represent command for retrieving connectors from API
+var ListCmd = &cobra.Command{
 	Use:   "list",
 	Short: "List running connector",
 	Long:  `List current running connector`,
@@ -55,9 +55,4 @@ var listCmd = &cobra.Command{
 		color.Green("config for %s connector:\n", selected)
 		fmt.Println(config)
 	},
-}
-
-func init() {
-	rootCmd.AddCommand(listCmd)
-
 }

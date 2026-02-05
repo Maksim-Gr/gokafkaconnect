@@ -38,20 +38,13 @@ func ToPrettyJSON(v interface{}) (string, error) {
 	return string(b), nil
 }
 
-func getExecutablePath() (string, error) {
-	exe, err := os.Executable()
-	if err != nil {
-		return "", err
-	}
-	return filepath.Dir(exe), nil
-}
-
 func GetConfigPath() (string, error) {
-	exe, err := getExecutablePath()
+	home, err := os.UserHomeDir()
 	if err != nil {
 		return "", err
 	}
-	return filepath.Join(exe, "config.yaml"), nil
+	configDir := filepath.Join(home, ".gokafkaconnect")
+	return filepath.Join(configDir, "config.yaml"), nil
 }
 
 func ValidateURL(input string) error {

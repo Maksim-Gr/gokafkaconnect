@@ -1,4 +1,4 @@
-package cmd
+package connector
 
 import (
 	"gokafkaconnect/internal/connector"
@@ -10,8 +10,8 @@ import (
 
 var connectorName string
 
-// deleteCmd represents the delete command
-var deleteCmd = &cobra.Command{
+// DeleteCmd represents the delete command
+var DeleteCmd = &cobra.Command{
 	Use:   "delete",
 	Short: "delete connector",
 	Long:  `Delete connector from Kafka Connect API`,
@@ -39,17 +39,6 @@ var deleteCmd = &cobra.Command{
 }
 
 func init() {
-	rootCmd.AddCommand(deleteCmd)
-
-	// Here you will define your flags and configuration settings.
-
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// deleteCmd.PersistentFlags().String("foo", "", "A help for foo")
-
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// deleteCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
-	deleteCmd.Flags().StringVarP(&connectorName, "connector", "c", "", "Connector name to delete")
-	deleteCmd.MarkFlagRequired("connector")
+	DeleteCmd.Flags().StringVarP(&connectorName, "connector", "c", "", "Connector name to delete")
+	DeleteCmd.MarkFlagRequired("connector")
 }
