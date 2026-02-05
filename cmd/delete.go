@@ -28,7 +28,8 @@ var deleteCmd = &cobra.Command{
 			color.Red("Failed to load config file: %v\n", err)
 			return
 		}
-		err = connector.DeleteConnector(cfg.KafkaConnect.URL, connectorName)
+		client := connector.NewClient(cfg.KafkaConnect.URL)
+		err = client.DeleteConnector(connectorName)
 		if err != nil {
 			color.Red("Failed to delete connector: %v\n", err)
 		} else {

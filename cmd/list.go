@@ -21,7 +21,8 @@ var listCmd = &cobra.Command{
 			color.Red("Failed to load config: %v\n", err)
 			return
 		}
-		connectors, err := connector.ListConnectors(cfg.KafkaConnect.URL)
+		client := connector.NewClient(cfg.KafkaConnect.URL)
+		connectors, err := client.ListConnectors()
 		if err != nil {
 			color.Red("Failed to list connector: %v\n", err)
 			return
@@ -31,7 +32,7 @@ var listCmd = &cobra.Command{
 			color.Yellow("No connectors found")
 			return
 		}
-		color.Cyan("🔗 Connectors:")
+		color.Cyan("Connectors:")
 		for _, connector := range connectors {
 			fmt.Printf("\t%s\n", connector)
 		}
@@ -46,7 +47,7 @@ var listCmd = &cobra.Command{
 			color.Red("canceled\n", err)
 		}
 
-		config, err := connector.GetConnectorConfig(cfg.KafkaConnect.URL, selected)
+		config, err := client.GetConnectorConfig(selected)
 		if err != nil {
 			color.Red("Failed to get connector config: %v\n", err)
 			return

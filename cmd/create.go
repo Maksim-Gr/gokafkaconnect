@@ -43,6 +43,7 @@ var createCmd = &cobra.Command{
 }
 
 func configureRedisConnector() {
+
 	color.Yellow("\n  Starting configuration for Redis Connector...\n")
 
 	connectorConfig := template.GetRedisConnectorTemplate()
@@ -137,11 +138,13 @@ func configureRedisConnector() {
 	if submitConfirm {
 		color.Green("\n Submitting connector...\n")
 		cfg, err := util.LoadConfig()
+
 		if err != nil {
 			color.Red("Failed to load config file: %v\n", err)
 			return
 		}
-		err = connector.SubmitConnector(finalConfig, cfg.KafkaConnect.URL)
+		client := connector.NewClient(cfg.KafkaConnect.URL)
+		err = client.SubmitConnector(finalConfig)
 		if err != nil {
 			color.Red("Failed to submit connector: %v\n", err)
 		} else {

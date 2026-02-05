@@ -21,7 +21,8 @@ var healthCheck = &cobra.Command{
 			color.Red("Failed to load config: %v\n", err)
 			return
 		}
-		rawStatuses, err := connector.ListConnectorStatuses(cfg.KafkaConnect.URL)
+		client := connector.NewClient(cfg.KafkaConnect.URL)
+		rawStatuses, err := client.ListConnectorStatuses()
 		if err != nil {
 			color.Red("Failed to list connector statuses: %v", err)
 			return

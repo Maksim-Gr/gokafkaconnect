@@ -1,139 +1,118 @@
 package connector
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
-	"io"
 	"net/http"
 	"os"
 	"path/filepath"
 	"time"
 )
 
-func ListConnectors(kafkaConnectURL string) ([]string, error) {
-	url := fmt.Sprintf("%s/connectors", kafkaConnectURL)
-	req, err := http.NewRequest("GET", url, nil)
+func (c *Client) ListConnectors() ([]string, error) {
+	body, status, err := c.doRequest(http.MethodGet, "/connectors", nil)
 	if err != nil {
 		return nil, err
 	}
-	req.Header.Set("Content-Type", "application/json")
+	if !isSuccess(status) {
+		return nil, fmt.Errorf("failed to list connectors: %s", string(body))
+	}
+	var connectors []string
+	if err := json.Unmarshal(body, &connectors); err != nil {
+		return nil, err
+	}
+	return connectors, nil
+}
 
-	client := &http.Client{}
-	resp, err := client.Do(req)
+func (c *Client) ListConnectorStatuses() (ConnectorsStatusResponse, error) {
+	body, status, err := c.doRequest(http.MethodGet, "/connectors?expand=status", nil)
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close() //nolint:errcheck
-
-	if resp.StatusCode >= 200 && resp.StatusCode < 300 {
-		body, _ := io.ReadAll(resp.Body)
-		var connectors []string
-		if err := json.Unmarshal(body, &connectors); err != nil {
-			return nil, err
-		}
-		return connectors, nil
+	if !isSuccess(status) {
+		return nil, fmt.Errorf("failed to list connector statuses: %s", string(body))
 	}
-	body, _ := io.ReadAll(resp.Body)
-	return nil, fmt.Errorf("failed to list connector: %s", string(body))
+	var connectorsStatus ConnectorsStatusResponse
+	if err := json.Unmarshal(body, &connectorsStatus); err != nil {
+		return nil, err
+	}
+	return connectorsStatus, nil
 }
 
-func ListConnectorStatuses(kafkaConnectURL string) (ConnectorsStatusResponse, error) {
-	url := fmt.Sprintf("%s/connectors?expand=status", kafkaConnectURL)
-	req, err := http.NewRequest("GET", url, nil)
+func (c *Client) DeleteConnector(name string) error {
+	body, status, err := c.doRequest(http.MethodDelete, fmt.Sprintf("/connectors/%s", name), nil)
+	if err != nil {
+		return err
+	}
+	if status == http.StatusConflict {
+		return fmt.Errorf("failed to delete connector %s: a rebalance is in process", name)
+	}
+	if !isSuccess(status) {
+		return fmt.Errorf("failed to delete connector %s: %s", name, string(body))
+	}
+	return nil
+}
+
+func (c *Client) SubmitConnector(configJson string) error {
+	body, status, err := c.doRequest(http.MethodPost, "/connectors", []byte(configJson))
+	if err != nil {
+		return err
+	}
+	if !isSuccess(status) {
+		return fmt.Errorf("failed to submit connector configuration: %s", string(body))
+	}
+	return nil
+}
+
+func (c *Client) GetConnectorConfig(name string) (string, error) {
+	body, status, err := c.doRequest(
+		http.MethodGet,
+		"/connectors/"+name+"/config",
+		nil,
+	)
+	if err != nil {
+		return "", err
+	}
+	if !isSuccess(status) {
+		return "", fmt.Errorf("failed to get connector config: %s", body)
+	}
+	return string(body), nil
+}
+
+func (c *Client) GetConnectorConfigJSON(name string) (map[string]interface{}, error) {
+	body, status, err := c.doRequest(
+		http.MethodGet,
+		"/connectors/"+name+"/config",
+		nil,
+	)
 	if err != nil {
 		return nil, err
 	}
-	req.Header.Set("Content-Type", "application/json")
+	if !isSuccess(status) {
+		return nil, fmt.Errorf("failed to get config for %s: %s", name, body)
+	}
 
-	client := &http.Client{}
-	resp, err := client.Do(req)
-	if err != nil {
+	var cfg map[string]interface{}
+	if err := json.Unmarshal(body, &cfg); err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close() //nolint:errcheck
-
-	body, _ := io.ReadAll(resp.Body)
-
-	if resp.StatusCode >= 200 && resp.StatusCode < 300 {
-		var result ConnectorsStatusResponse
-		if err := json.Unmarshal(body, &result); err != nil {
-			return nil, fmt.Errorf("failed to parse status response: %w", err)
-		}
-		return result, nil
-	}
-
-	return nil, fmt.Errorf("failed to list connector statuses: %s", string(body))
+	return cfg, nil
 }
 
-// DeleteConnector delete connector from Kafka Connect API
-func DeleteConnector(kafkaConnectURL string, connector string) error {
-	url := fmt.Sprintf("%s/connectors/%s", kafkaConnectURL, connector)
-	req, err := http.NewRequest("DELETE", url, nil)
-	if err != nil {
-		return err
-	}
-	req.Header.Set("Content-Type", "application/json")
-	client := &http.Client{}
-	resp, err := client.Do(req)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close() //nolint:errcheck
-	if resp.StatusCode >= 200 && resp.StatusCode < 300 {
-		return nil
-	}
-	if resp.StatusCode == 409 {
-		return fmt.Errorf("failed to delete connector %s: a rebalance is in process", connector)
-	}
-	body, _ := io.ReadAll(resp.Body)
-	return fmt.Errorf("failed to delete connector: %s", string(body))
-}
+func BackupConnectorConfig(
+	client *Client,
+	connectors []string,
+	outputDir string,
+) (string, error) {
 
-func SubmitConnector(configJson string, kafkaConnectURL string) error {
-
-	url := fmt.Sprintf("%s/connectors", kafkaConnectURL)
-	req, err := http.NewRequest("POST", url, bytes.NewBuffer([]byte(configJson)))
-	if err != nil {
-		return err
-	}
-	req.Header.Set("Content-Type", "application/json")
-	client := &http.Client{}
-	resp, err := client.Do(req)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close() //nolint:errcheck
-	if resp.StatusCode >= 200 && resp.StatusCode < 300 {
-		return nil
-	}
-	body, _ := io.ReadAll(resp.Body)
-	return fmt.Errorf("failed to submit connector configuration: %s", string(body))
-}
-
-func BackupConnectorConfig(kafkaConnectURL string, connectors []string, outputDir string) (string, error) {
 	dumpConfig := make(map[string]map[string]interface{})
 
 	for _, name := range connectors {
-		url := fmt.Sprintf("%s/connectors/%s/config", kafkaConnectURL, name)
-
-		resp, err := http.Get(url)
+		cfg, err := client.GetConnectorConfigJSON(name)
 		if err != nil {
-			return "", fmt.Errorf("failed to connect to %s: %s", url, err)
+			return "", err
 		}
-		defer resp.Body.Close()
-
-		if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-			body, _ := io.ReadAll(resp.Body)
-			return "", fmt.Errorf("failed to connect to %s: %s", url, string(body))
-		}
-
-		var config map[string]interface{}
-		if err := json.NewDecoder(resp.Body).Decode(&config); err != nil {
-			return "", fmt.Errorf("failed to decode config for %s: %w", name, err)
-		}
-
-		dumpConfig[name] = config
+		dumpConfig[name] = cfg
 	}
 
 	if err := os.MkdirAll(outputDir, 0o755); err != nil {
@@ -147,7 +126,7 @@ func BackupConnectorConfig(kafkaConnectURL string, connectors []string, outputDi
 	if err != nil {
 		return "", fmt.Errorf("failed to create file: %w", err)
 	}
-	defer file.Close()
+	defer file.Close() //nolint:errcheck
 
 	encoder := json.NewEncoder(file)
 	encoder.SetIndent("", "  ")
@@ -156,27 +135,4 @@ func BackupConnectorConfig(kafkaConnectURL string, connectors []string, outputDi
 	}
 
 	return outputFile, nil
-}
-
-func GetConnectorConfig(kafkaConnectURL, name string) (string, error) {
-	url := fmt.Sprintf("%s/connectors/%s/config", kafkaConnectURL, name)
-	req, err := http.NewRequest("GET", url, nil)
-	if err != nil {
-		return "", err
-	}
-	req.Header.Set("Content-Type", "application/json")
-
-	client := &http.Client{}
-	resp, err := client.Do(req)
-	if err != nil {
-		return "", err
-	}
-	defer resp.Body.Close()
-
-	body, _ := io.ReadAll(resp.Body)
-	if resp.StatusCode >= 200 && resp.StatusCode < 300 {
-		return string(body), nil
-	}
-	return "", fmt.Errorf("failed to get connector config: %s", string(body))
-
 }
