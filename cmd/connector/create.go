@@ -1,7 +1,10 @@
 package connector
 
 import (
+	"encoding/json"
 	"fmt"
+	"os"
+
 	"gokafkaconnect/internal/connector"
 	template "gokafkaconnect/internal/connector/kafka/templates"
 	"gokafkaconnect/internal/util"
@@ -18,12 +21,19 @@ var connectors = []string{
 	"️Iceberg Connector",
 }
 
+var connectorJSONPath string
+
 // CreateCmd represents the create command
 var CreateCmd = &cobra.Command{
 	Use:   "create",
 	Short: "Create a connector from predefined configuration  ",
 	Long:  `Browse predefined connector.`,
 	Run: func(cmd *cobra.Command, args []string) {
+		if connectorJSONPath != "" {
+			submitConnectorFromFile(connectorJSONPath)
+			return
+		}
+
 		var selected string
 		color.Cyan("\n Available Kafka Connectors \n")
 		prompt := &survey.Select{
@@ -40,6 +50,42 @@ var CreateCmd = &cobra.Command{
 			configureRedisConnector()
 		}
 	},
+}
+
+func init() {
+	CreateCmd.Flags().StringVarP(&connectorJSONPath, "file", "f", "", "Path to connector JSON config file")
+}
+
+func submitConnectorFromFile(path string) {
+	b, err := os.ReadFile(path)
+	if err != nil {
+		color.Red("Failed to read file %s: %v\n", path, err)
+		return
+	}
+
+	var js json.RawMessage
+	if err := json.Unmarshal(b, &js); err != nil {
+		color.Red("Invalid JSON in %s: %v\n", path, err)
+		return
+	}
+
+	cfg, err := util.LoadConfig()
+	if err != nil {
+		color.Red("Failed to load config file: %v\n", err)
+		return
+	}
+
+	client := connector.NewClient(cfg.KafkaConnect.URL)
+	if cfg.KafkaConnect.Username != "" {
+		client.SetBasicAuth(cfg.KafkaConnect.Username, cfg.KafkaConnect.Password)
+	}
+
+	color.Green("\n Submitting connector from file: %s ...\n", path)
+	if err := client.SubmitConnector(string(b)); err != nil {
+		color.Red("Failed to submit connector: %v\n", err)
+		return
+	}
+	color.Green("Connector submitted successfully!\n")
 }
 
 func configureRedisConnector() {
@@ -70,7 +116,6 @@ func configureRedisConnector() {
 		return
 	}
 
-	// Update config
 	for key, value := range answers {
 		connectorConfig[key] = fmt.Sprintf("%v", value)
 	}
@@ -144,6 +189,10 @@ func configureRedisConnector() {
 			return
 		}
 		client := connector.NewClient(cfg.KafkaConnect.URL)
+		if cfg.KafkaConnect.Username != "" {
+			client.SetBasicAuth(cfg.KafkaConnect.Username, cfg.KafkaConnect.Password)
+		}
+
 		err = client.SubmitConnector(finalConfig)
 		if err != nil {
 			color.Red("Failed to submit connector: %v\n", err)
