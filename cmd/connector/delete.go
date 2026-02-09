@@ -3,6 +3,7 @@ package connector
 import (
 	"gokafkaconnect/internal/connector"
 	"gokafkaconnect/internal/util"
+	"os"
 
 	"github.com/fatih/color"
 	"github.com/spf13/cobra"
@@ -40,5 +41,11 @@ var DeleteCmd = &cobra.Command{
 
 func init() {
 	DeleteCmd.Flags().StringVarP(&connectorName, "connector", "c", "", "Connector name to delete")
-	DeleteCmd.MarkFlagRequired("connector")
+	if err := DeleteCmd.MarkFlagRequired("connector"); err != nil {
+		if err := DeleteCmd.MarkFlagRequired("connector"); err != nil {
+			color.Red("failed to mark --connector as required: %v", err)
+			os.Exit(1)
+		}
+		os.Exit(1)
+	}
 }
