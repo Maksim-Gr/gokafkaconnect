@@ -2,7 +2,6 @@ package config
 
 import (
 	"errors"
-	"fmt"
 	"os"
 	"strings"
 
@@ -10,25 +9,22 @@ import (
 
 	"github.com/AlecAivazis/survey/v2"
 	"github.com/fatih/color"
-
 	"github.com/spf13/cobra"
 )
 
 var dryRun bool
 
-//var configPath = filepath.Join(os.Getenv("HOME"), ".gokafkacon", "config.json")
-
 // ConfigureCmd represents the configure command
 var ConfigureCmd = &cobra.Command{
 	Use:   "configure",
-	Short: "Set Kafka connect URL",
-	Long:  `Configure and set Kafka Connect REST API URL.`,
+	Short: "Configure Kafka Connect REST API",
+	Long:  `Configure Kafka Connect REST API URL and authentication.`,
 	Run: func(cmd *cobra.Command, args []string) {
 
 		if dryRun {
 			color.Cyan("Dry run mode")
 		} else {
-			color.Cyan("\nConfiguring Kafka Connect URL...\n")
+			color.Cyan("\nConfiguring Kafka Connect...\n")
 		}
 
 		configPath, err := util.GetConfigPath()
@@ -36,44 +32,44 @@ var ConfigureCmd = &cobra.Command{
 			color.Red("Failed to determine config path: %v", err)
 			os.Exit(1)
 		}
-		var current util.RestAPIConfig
+
 		currentURL := ""
+		currentUser := ""
+		currentPass := ""
 
 		if loaded, err := util.LoadConfig(); err == nil {
-			current = loaded
 			currentURL = loaded.KafkaConnect.URL
+			currentUser = loaded.KafkaConnect.Username
+			currentPass = loaded.KafkaConnect.Password
 			color.Yellow("Current Kafka Connect URL: %s", currentURL)
 		}
 
+		// --- URL prompt ---
 		var inputURL string
-		prompt := &survey.Input{
+		urlPrompt := &survey.Input{
 			Message: "Kafka Connect URL:",
 			Help:    "Enter the URL of your Kafka Connect REST API (e.g. http://localhost:8083)",
 			Default: currentURL,
 		}
 
-		err = survey.AskOne(prompt, &inputURL, survey.WithValidator(
+		err = survey.AskOne(urlPrompt, &inputURL, survey.WithValidator(
 			func(ans interface{}) error {
 				s := ans.(string)
 
 				if s == currentURL {
 					return nil
 				}
-
 				if s == "" && currentURL == "" {
 					return errors.New("URL cannot be empty")
 				}
-
 				if s == "" {
 					return nil
 				}
-
 				return util.ValidateURL(s)
 			},
 		))
-
 		if err != nil {
-			fmt.Println("Failed:", err)
+			color.Red("Failed: %v", err)
 			os.Exit(1)
 		}
 
@@ -82,28 +78,62 @@ var ConfigureCmd = &cobra.Command{
 			inputURL = "http://" + inputURL
 		}
 
+		var inputUser string
+		userPrompt := &survey.Input{
+			Message: "Kafka Connect username (leave empty for no auth):",
+			Default: currentUser,
+		}
+
+		if err := survey.AskOne(userPrompt, &inputUser); err != nil {
+			color.Red("Failed to read username: %v", err)
+			os.Exit(1)
+		}
+
+		inputPass := currentPass
+		if inputUser != "" {
+			passPrompt := &survey.Password{
+				Message: "Kafka Connect password:",
+				Help:    "Password will be stored in your local config file",
+			}
+			if err := survey.AskOne(passPrompt, &inputPass); err != nil {
+				color.Red("Failed to read password: %v", err)
+				os.Exit(1)
+			}
+		} else {
+			inputPass = ""
+		}
+
 		cfg := util.RestAPIConfig{
 			KafkaConnect: util.KafkaConnectConfig{
 				URL:      inputURL,
-				Username: current.KafkaConnect.Username,
-				Password: current.KafkaConnect.Password,
+				Username: inputUser,
+				Password: inputPass,
 			},
 		}
 
 		if dryRun {
 			color.Cyan("Dry run mode — config will not be saved.")
-			color.Cyan("Kafka Connect URL would be: %s", inputURL)
+			color.Cyan("Kafka Connect URL: %s", inputURL)
+			if inputUser != "" {
+				color.Cyan("Authentication: enabled (username: %s)", inputUser)
+			} else {
+				color.Cyan("Authentication: disabled")
+			}
 			return
 		}
 
-		err = util.SaveConfig(cfg, configPath)
-		if err != nil {
-			color.Red("Failed to save config file: %s", err)
-			return
+		if err := util.SaveConfig(cfg, configPath); err != nil {
+			color.Red("Failed to save config file: %v", err)
+			os.Exit(1)
 		}
 
 		color.Green("Configuration saved successfully!")
 		color.Green("Kafka Connect URL: %s", inputURL)
+		if inputUser != "" {
+			color.Green("Authentication enabled for user: %s", inputUser)
+		} else {
+			color.Green("Authentication disabled")
+		}
 	},
 }
 

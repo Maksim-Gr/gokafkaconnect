@@ -9,8 +9,10 @@ import (
 )
 
 type Client struct {
-	baseURL string
-	http    *http.Client
+	baseURL  string
+	username string
+	password string
+	http     *http.Client
 }
 
 func NewClient(kafkaConnectURL string) *Client {
@@ -20,6 +22,11 @@ func NewClient(kafkaConnectURL string) *Client {
 			Timeout: 30 * time.Second,
 		},
 	}
+}
+
+func (c *Client) SetBasicAuth(username, password string) {
+	c.username = username
+	c.password = password
 }
 
 func (c *Client) doRequest(method, path string, body []byte) ([]byte, int, error) {
@@ -33,6 +40,10 @@ func (c *Client) doRequest(method, path string, body []byte) ([]byte, int, error
 	}
 
 	req.Header.Set("Content-Type", "application/json")
+
+	if c.username != "" {
+		req.SetBasicAuth(c.username, c.password)
+	}
 
 	resp, err := c.http.Do(req)
 	if err != nil {
