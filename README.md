@@ -1,13 +1,13 @@
-# kc CLI
+# gk CLI
 
 A command-line interface for managing Kafka Connect connectors via the Kafka Connect REST API.  
-`kc` focuses on providing a fast, simple, and interactive CLI experience for day-to-day connector operations.
+`gk` focuses on providing a fast, simple, and interactive CLI experience for day-to-day connector operations.
 
 ---
 
 ## Overview
 
-`kc` is a Go-based CLI tool designed to interact with Kafka Connect clusters.  
+`gk` is a Go-based CLI tool designed to interact with Kafka Connect clusters.  
 It creates a lightweight client for the Kafka Connect REST API and exposes common connector management operations through an intuitive command-line interface.
 
 The tool is intended for developers and operators who want a straightforward way to list, inspect, back up, create, and delete connectors without manually interacting with REST endpoints.
@@ -28,13 +28,23 @@ The tool is intended for developers and operators who want a straightforward way
 
 ## Configuration
 
-`kc` requires a configuration file to locate and connect to a Kafka Connect cluster.
+`gk` requires a configuration file to locate and connect to a Kafka Connect cluster.
 
 The configuration file defines at minimum:
 - Kafka Connect REST API URL
 
 The config is loaded at runtime using the internal configuration loader.  
-(Example configuration and documentation will be expanded as the project evolves.)
+Config file location:
+- `~/.gokafkaconnect/config.yaml`
+
+Example config:
+
+```yaml
+kafkaConnect:
+  url: http://localhost:8083
+  username: ""
+  password: ""
+```
 
 ---
 
@@ -51,7 +61,7 @@ go build -o kc
 Run the CLI:
 
 ```bash
-./kc
+./gk
 ```
 
 ---
@@ -69,7 +79,7 @@ Typical workflows include:
 Run the following to explore available commands:
 
 ```bash
-./kc --help
+./gk --help
 ```
 
 ---
@@ -79,7 +89,7 @@ Run the following to explore available commands:
 The `backup` command retrieves all connector configurations from the Kafka Connect cluster and stores them in a timestamped JSON file:
 
 ```bash
-./kc backup --dir ./backup
+./gk config backup --dir ./backup
 ```
 
 This allows connector configurations to be versioned, reviewed, or restored later.
@@ -105,7 +115,7 @@ Breaking changes may occur while APIs and internal structure are refined.
 
 ## Contributing & Feedback
 
-`kc` is a personal project created to simplify connector management for my own use.  
+`gk` is a personal project created to simplify connector management for my own use.  
 Bug reports, feedback, and contributions are welcome.
 
 If you encounter issues or have suggestions:
