@@ -1,14 +1,29 @@
 run:
   timeout: 5m
+  tests: true
 
 linters:
   enable:
     - govet
-    - errcheck
+    - typecheck
     - staticcheck
+    - errcheck
+    - ineffassign
     - unused
     - gosimple
-    - structcheck
-    - varcheck
-    - deadcode
+    - gocritic
+    - revive
     - gofmt
+    - goimports
+    - misspell
+    - whitespace
+    - prealloc
+    - gosec
+    - errorlint
+
+issues:
+  exclude-use-default: false
+  max-issues-per-linter: 0
+  max-same-issues: 0
+
+
