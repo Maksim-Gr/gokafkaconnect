@@ -8,6 +8,12 @@
 *.so
 *.dylib
 
+kc
+gokafkaconnect
+
+
+
+
 # Test binary, built with `go test -c`
 *.test
 

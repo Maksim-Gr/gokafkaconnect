@@ -20,6 +20,10 @@ linters:
     - prealloc
     - gosec
     - errorlint
+    - gocyclo
+    - dupl
+    - godot
+    - nolintlint
 
 issues:
   exclude-use-default: false
