@@ -1,6 +1,6 @@
 package templates
 
-var defaultRedisConfig = map[string]string{
+var defaultRabbitMQConfig = map[string]string{
 	"connector.class":                       "com.ibm.eventstreams.connect.rabbitmqsource.RabbitMQSourceConnector",
 	"rabbitmq.topology.recovery.enabled":    "true",
 	"tasks.max":                             "1",
@@ -16,9 +16,9 @@ var defaultRedisConfig = map[string]string{
 	"rabbitmq.automatic.recovery.enabled":   "true",
 }
 
-func GetRedisConnectorTemplate() map[string]string {
+func GetRabbitMQConnectorTemplate() map[string]string {
 	configCopy := make(map[string]string)
-	for k, v := range defaultRedisConfig {
+	for k, v := range defaultRabbitMQConfig {
 		configCopy[k] = v
 	}
 	return configCopy

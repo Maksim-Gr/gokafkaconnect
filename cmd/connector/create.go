@@ -17,8 +17,8 @@ import (
 // Available connectors
 var connectors = []string{
 	"RabbitMQ Connector",
-	"RabbitMQ  Stream Connector",
-	"️Iceberg Connector",
+	"RabbitMQ Stream Connector",
+	"Iceberg Connector",
 }
 
 var connectorJSONPath string
@@ -46,8 +46,11 @@ var CreateCmd = &cobra.Command{
 			return
 		}
 		color.Green("\n You selected: %s\n", selected)
-		if selected == "RabbitMQ Connector" {
-			configureRedisConnector()
+		switch selected {
+		case "RabbitMQ Connector":
+			configureRabbitMQConnector()
+		default:
+			color.Yellow("%s is not yet implemented\n", selected)
 		}
 	},
 }
@@ -88,11 +91,11 @@ func submitConnectorFromFile(path string) {
 	color.Green("Connector submitted successfully!\n")
 }
 
-func configureRedisConnector() {
+func configureRabbitMQConnector() {
 
-	color.Yellow("\n  Starting configuration for Redis Connector...\n")
+	color.Yellow("\n  Starting configuration for RabbitMQ Connector...\n")
 
-	connectorConfig := template.GetRedisConnectorTemplate()
+	connectorConfig := template.GetRabbitMQConnectorTemplate()
 
 	var questions []*survey.Question
 	for _, field := range template.RequiredFields() {
@@ -122,7 +125,7 @@ func configureRedisConnector() {
 
 	for {
 		finalConfig, _ := util.ToPrettyJSON(connectorConfig)
-		color.Cyan("\n Current Redis Connector Configuration:\n")
+		color.Cyan("\n Current RabbitMQ Connector Configuration:\n")
 		fmt.Println(finalConfig)
 
 		var confirmChange bool
@@ -166,7 +169,7 @@ func configureRedisConnector() {
 
 	}
 	finalConfig, _ := util.ToPrettyJSON(connectorConfig)
-	color.Cyan("\nFinal Redis Connector Configuration:\n")
+	color.Cyan("\nFinal RabbitMQ Connector Configuration:\n")
 	fmt.Println(finalConfig)
 
 	var submitConfirm bool

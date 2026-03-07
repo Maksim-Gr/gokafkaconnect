@@ -42,10 +42,7 @@ var DeleteCmd = &cobra.Command{
 func init() {
 	DeleteCmd.Flags().StringVarP(&connectorName, "connector", "c", "", "Connector name to delete")
 	if err := DeleteCmd.MarkFlagRequired("connector"); err != nil {
-		if err := DeleteCmd.MarkFlagRequired("connector"); err != nil {
-			color.Red("failed to mark --connector as required: %v", err)
-			os.Exit(1)
-		}
+		color.Red("failed to mark --connector as required: %v", err)
 		os.Exit(1)
 	}
 }

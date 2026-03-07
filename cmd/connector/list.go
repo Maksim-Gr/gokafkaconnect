@@ -44,7 +44,7 @@ var ListCmd = &cobra.Command{
 		}
 		err = survey.AskOne(prompt, &selected)
 		if err != nil {
-			color.Red("canceled\n", err)
+			color.Red("canceled: %v\n", err)
 		}
 
 		config, err := client.GetConnectorConfig(selected)

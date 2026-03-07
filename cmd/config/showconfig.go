@@ -22,6 +22,10 @@ var ShowConfigCmd = &cobra.Command{
 			return
 		}
 
+		if cfg.KafkaConnect.Password != "" {
+			cfg.KafkaConnect.Password = "********"
+		}
+
 		color.Cyan("Current Configuration:")
 		data, err := json.MarshalIndent(cfg, "", "  ")
 		if err != nil {

@@ -17,7 +17,11 @@ func NewKafkaConnectClient() (*connector.Client, bool) {
 		color.Red("Failed to load config: %v\n", err)
 		return nil, false
 	}
-	return connector.NewClient(cfg.KafkaConnect.URL), true
+	client := connector.NewClient(cfg.KafkaConnect.URL)
+	if cfg.KafkaConnect.Username != "" {
+		client.SetBasicAuth(cfg.KafkaConnect.Username, cfg.KafkaConnect.Password)
+	}
+	return client, true
 }
 
 // ResolveConnectorName returns a connector name from:

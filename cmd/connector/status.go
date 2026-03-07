@@ -1,7 +1,6 @@
 package connector
 
 import (
-	"encoding/json"
 	"fmt"
 	"gokafkaconnect/internal/connector"
 	"gokafkaconnect/internal/util"
@@ -22,21 +21,9 @@ var HealthCheckCmd = &cobra.Command{
 			return
 		}
 		client := connector.NewClient(cfg.KafkaConnect.URL)
-		rawStatuses, err := client.ListConnectorStatuses()
+		connectorStatuses, err := client.ListConnectorStatuses()
 		if err != nil {
 			color.Red("Failed to list connector statuses: %v", err)
-			return
-		}
-
-		rawJSON, err := json.Marshal(rawStatuses)
-		if err != nil {
-			color.Red("Failed to marshal raw connector statuses: %v", err)
-			return
-		}
-
-		var connectorStatuses connector.ConnectorsStatusResponse
-		if err := json.Unmarshal(rawJSON, &connectorStatuses); err != nil {
-			color.Red("Failed to unmarshal into typed connector statuses: %v", err)
 			return
 		}
 

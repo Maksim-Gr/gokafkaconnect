@@ -66,11 +66,20 @@ func TestConnectorLifecycle(t *testing.T) {
 	})
 
 	t.Run("ListStatuses", func(t *testing.T) {
-		// Wait briefly for status propagation.
-		time.Sleep(2 * time.Second)
-
-		statuses, err := client.ListConnectorStatuses()
-		require.NoError(t, err)
+		var statuses c.ConnectorsStatusResponse
+		require.Eventually(t, func() bool {
+			var err error
+			statuses, err = client.ListConnectorStatuses()
+			if err != nil {
+				return false
+			}
+			for _, name := range connectorNames {
+				if _, ok := statuses[name]; !ok {
+					return false
+				}
+			}
+			return true
+		}, 10*time.Second, 500*time.Millisecond, "connector statuses did not propagate in time")
 
 		for _, name := range connectorNames {
 			_, ok := statuses[name]
