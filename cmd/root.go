@@ -19,11 +19,17 @@ var DryRun bool
 var RootCmd = &cobra.Command{
 	Use:   "gk",
 	Short: "CLI to manage Kafka connector fast and easy!",
-	Long: `gk - cli tool for working  with Kafka Connect.
+	Long: `gk - cli tool for working with Kafka Connect.
 	Manage, create, and list predefined connector in seconds!`,
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
 		// Pass dryRun flag to subpackages
 		config.SetDryRun(DryRun)
+
+		// Skip config check for config subcommands (configure, show-config, backup)
+		// so the user isn't double-prompted on first-time setup.
+		if cmd.Parent() != nil && cmd.Parent().Use == "config" {
+			return
+		}
 
 		color.Blue("\nChecking configuration...\n")
 		cfg, err := util.LoadConfig()

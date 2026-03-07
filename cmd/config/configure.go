@@ -73,7 +73,9 @@ var ConfigureCmd = &cobra.Command{
 			os.Exit(1)
 		}
 
-		if !strings.HasPrefix(inputURL, "http://") && !strings.HasPrefix(inputURL, "https://") {
+		if inputURL == "" {
+			inputURL = currentURL
+		} else if !strings.HasPrefix(inputURL, "http://") && !strings.HasPrefix(inputURL, "https://") {
 			color.Yellow("No scheme specified — assuming http://")
 			inputURL = "http://" + inputURL
 		}
@@ -89,8 +91,13 @@ var ConfigureCmd = &cobra.Command{
 			os.Exit(1)
 		}
 
+		// Ask for password only when a username is being set for the first time
+		// or explicitly changed. If the user pressed Enter keeping the existing
+		// username, retain the stored password without prompting.
 		inputPass := currentPass
-		if inputUser != "" {
+		if inputUser == "" {
+			inputPass = ""
+		} else if inputUser != currentUser {
 			passPrompt := &survey.Password{
 				Message: "Kafka Connect password:",
 				Help:    "Password will be stored in your local config file",
@@ -99,8 +106,6 @@ var ConfigureCmd = &cobra.Command{
 				color.Red("Failed to read password: %v", err)
 				os.Exit(1)
 			}
-		} else {
-			inputPass = ""
 		}
 
 		cfg := util.RestAPIConfig{

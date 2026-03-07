@@ -22,6 +22,9 @@ var ListCmd = &cobra.Command{
 			return
 		}
 		client := connector.NewClient(cfg.KafkaConnect.URL)
+		if cfg.KafkaConnect.Username != "" {
+			client.SetBasicAuth(cfg.KafkaConnect.Username, cfg.KafkaConnect.Password)
+		}
 		connectors, err := client.ListConnectors()
 		if err != nil {
 			color.Red("Failed to list connector: %v\n", err)
@@ -44,7 +47,8 @@ var ListCmd = &cobra.Command{
 		}
 		err = survey.AskOne(prompt, &selected)
 		if err != nil {
-			color.Red("canceled: %v\n", err)
+			color.Red("canceled\n")
+			return
 		}
 
 		config, err := client.GetConnectorConfig(selected)

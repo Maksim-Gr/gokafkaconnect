@@ -21,15 +21,21 @@ var HealthCheckCmd = &cobra.Command{
 			return
 		}
 		client := connector.NewClient(cfg.KafkaConnect.URL)
+		if cfg.KafkaConnect.Username != "" {
+			client.SetBasicAuth(cfg.KafkaConnect.Username, cfg.KafkaConnect.Password)
+		}
 		connectorStatuses, err := client.ListConnectorStatuses()
 		if err != nil {
 			color.Red("Failed to list connector statuses: %v", err)
 			return
 		}
 
-		color.Cyan("🔗 Connector Statuses:")
+		color.Cyan("Connector Statuses:")
 		for name, status := range connectorStatuses {
-			fmt.Printf("\t%s - Status: %s\n", name, status.Connector.State)
+			fmt.Printf("\t%s - Connector: %s\n", name, status.Connector.State)
+			for _, t := range status.Tasks {
+				fmt.Printf("\t\tTask %d: %s\n", t.ID, t.State)
+			}
 		}
 	},
 }

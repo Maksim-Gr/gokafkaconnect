@@ -21,6 +21,9 @@ var BackupCmd = &cobra.Command{
 			return
 		}
 		client := connector.NewClient(cfg.KafkaConnect.URL)
+		if cfg.KafkaConnect.Username != "" {
+			client.SetBasicAuth(cfg.KafkaConnect.Username, cfg.KafkaConnect.Password)
+		}
 
 		connectors, err := client.ListConnectors()
 		if err != nil {

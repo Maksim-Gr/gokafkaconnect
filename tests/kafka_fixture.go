@@ -22,17 +22,20 @@ func WaitForKafkaConnectStartUp(t *testing.T, baseURL string, timeout time.Durat
 		Class string `json:"class"`
 	}
 
+	isReady := func() bool {
+		resp, err := http.Get(fmt.Sprintf("%s/connector-plugins", baseURL))
+		if err != nil || resp.StatusCode != http.StatusOK {
+			return false
+		}
+		defer resp.Body.Close() //nolint:errcheck
+		var plugins []Plugin
+		return json.NewDecoder(resp.Body).Decode(&plugins) == nil && len(plugins) > 0
+	}
+
 	deadline := time.Now().Add(timeout)
 	for time.Now().Before(deadline) {
-		resp, err := http.Get(fmt.Sprintf("%s/connector-plugins", baseURL))
-		if err == nil && resp.StatusCode == http.StatusOK {
-			defer resp.Body.Close() //nolint:errcheck
-			var plugins []Plugin
-			if json.NewDecoder(resp.Body).Decode(&plugins) == nil {
-				if len(plugins) > 0 {
-					return
-				}
-			}
+		if isReady() {
+			return
 		}
 		time.Sleep(2 * time.Second)
 	}

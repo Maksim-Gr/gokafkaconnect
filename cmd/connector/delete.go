@@ -30,6 +30,9 @@ var DeleteCmd = &cobra.Command{
 			return
 		}
 		client := connector.NewClient(cfg.KafkaConnect.URL)
+		if cfg.KafkaConnect.Username != "" {
+			client.SetBasicAuth(cfg.KafkaConnect.Username, cfg.KafkaConnect.Password)
+		}
 		err = client.DeleteConnector(connectorName)
 		if err != nil {
 			color.Red("Failed to delete connector: %v\n", err)

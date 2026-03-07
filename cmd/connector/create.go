@@ -26,7 +26,7 @@ var connectorJSONPath string
 // CreateCmd represents the create command
 var CreateCmd = &cobra.Command{
 	Use:   "create",
-	Short: "Create a connector from predefined configuration  ",
+	Short: "Create a connector from predefined configuration",
 	Long:  `Browse predefined connector.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		if connectorJSONPath != "" {
@@ -98,7 +98,7 @@ func configureRabbitMQConnector() {
 	connectorConfig := template.GetRabbitMQConnectorTemplate()
 
 	var questions []*survey.Question
-	for _, field := range template.RequiredFields() {
+	for _, field := range template.RabbitMQRequiredFields() {
 		var prompt survey.Prompt
 		if field == "rabbitmq.password" {
 			prompt = &survey.Password{Message: fmt.Sprintf("Enter %s:", field)}
@@ -124,7 +124,11 @@ func configureRabbitMQConnector() {
 	}
 
 	for {
-		finalConfig, _ := util.ToPrettyJSON(connectorConfig)
+		finalConfig, err := util.ToPrettyJSON(connectorConfig)
+		if err != nil {
+			fmt.Println("Failed to format config:", err)
+			return
+		}
 		color.Cyan("\n Current RabbitMQ Connector Configuration:\n")
 		fmt.Println(finalConfig)
 
@@ -133,7 +137,7 @@ func configureRabbitMQConnector() {
 			Message: "Do you want to change any field?",
 			Default: false,
 		}
-		err := survey.AskOne(changePrompt, &confirmChange)
+		err = survey.AskOne(changePrompt, &confirmChange)
 		if err != nil {
 			fmt.Println("Prompt failed:", err)
 			return
@@ -168,7 +172,11 @@ func configureRabbitMQConnector() {
 		connectorConfig[fieldToChange] = newValue
 
 	}
-	finalConfig, _ := util.ToPrettyJSON(connectorConfig)
+	finalConfig, err := util.ToPrettyJSON(connectorConfig)
+	if err != nil {
+		fmt.Println("Failed to format config:", err)
+		return
+	}
 	color.Cyan("\nFinal RabbitMQ Connector Configuration:\n")
 	fmt.Println(finalConfig)
 

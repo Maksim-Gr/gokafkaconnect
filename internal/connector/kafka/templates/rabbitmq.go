@@ -24,8 +24,8 @@ func GetRabbitMQConnectorTemplate() map[string]string {
 	return configCopy
 }
 
-// RequiredFields returns a list of mandatory fields for rabbit connector
-func RequiredFields() []string {
+// RabbitMQRequiredFields returns a list of mandatory fields for the RabbitMQ connector.
+func RabbitMQRequiredFields() []string {
 	return []string{
 		"rabbitmq.username",
 		"rabbitmq.password",
