@@ -3,6 +3,7 @@ package util
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -41,6 +42,13 @@ func ValidateURL(input string) error {
 		return errors.New("URL cannot be empty")
 	}
 
+	// Reject explicit non-http/https schemes (e.g. ftp://)
+	if strings.Contains(input, "://") {
+		if !strings.HasPrefix(input, "http://") && !strings.HasPrefix(input, "https://") {
+			return errors.New("URL scheme must be http or https")
+		}
+	}
+
 	testURL := input
 	if !strings.HasPrefix(input, "http://") && !strings.HasPrefix(input, "https://") {
 		testURL = "http://" + input
@@ -51,8 +59,15 @@ func ValidateURL(input string) error {
 		return errors.New("invalid URL format")
 	}
 
-	if parsed.Host == "" {
+	hostname := parsed.Hostname()
+	if hostname == "" {
 		return errors.New("URL must contain a host (e.g. localhost:8083 or example.com)")
+	}
+
+	// Reject ambiguous single-character bare hostnames (e.g. "d")
+	// while still allowing service names like "kafkaconnect:8083"
+	if len(hostname) <= 1 && !strings.Contains(hostname, ".") && hostname != "localhost" {
+		return fmt.Errorf("invalid host: %q", hostname)
 	}
 
 	return nil
