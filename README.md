@@ -3,7 +3,7 @@
 [![Go](https://github.com/Maksim-Gr/gokafkaconnect/actions/workflows/go.yml/badge.svg)](https://github.com/Maksim-Gr/gokafkaconnect/actions/workflows/go.yml)
 [![Go Report Card](https://goreportcard.com/badge/github.com/Maksim-Gr/gokafkaconnect)](https://goreportcard.com/report/github.com/Maksim-Gr/gokafkaconnect)
 [![Go Version](https://img.shields.io/github/go-mod/go-version/Maksim-Gr/gokafkaconnect)](https://github.com/Maksim-Gr/gokafkaconnect/blob/main/go.mod)
-[![Latest Release](https://img.shields.io/github/v/release/Maksim-Gr/gokafkaconnect)](https://github.com/Maksim-Gr/gokafkaconnect/releases)
+[![Latest Release](https://img.shields.io/github/v/release/Maksim-Gr/gokafkaconnect?include_prereleases)](https://github.com/Maksim-Gr/gokafkaconnect/releases)
 
 ---
 
