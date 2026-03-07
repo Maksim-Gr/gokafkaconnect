@@ -5,6 +5,7 @@
 [![Go Version](https://img.shields.io/github/go-mod/go-version/Maksim-Gr/gokafkaconnect)](https://github.com/Maksim-Gr/gokafkaconnect/blob/main/go.mod)
 [![Latest Release](https://img.shields.io/github/v/release/Maksim-Gr/gokafkaconnect)](https://github.com/Maksim-Gr/gokafkaconnect/releases)
 
+---
 
 A command-line interface for managing Kafka Connect connectors via the Kafka Connect REST API.
 `gk` focuses on providing a fast, simple, and interactive CLI experience for day-to-day connector operations.
