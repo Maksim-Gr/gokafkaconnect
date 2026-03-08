@@ -45,13 +45,13 @@ checksum:
 changelog:
   sort: asc
   groups:
-    - title: "🚀 Features"
+    - title: "Features"
       regexp: "^.*feat[\\(\\w\\)]*:+.*$"
       order: 0
-    - title: "🐛 Bug Fixes"
+    - title: "Bug Fixes"
       regexp: "^.*fix[\\(\\w\\)]*:+.*$"
       order: 1
-    - title: "📦 Dependencies"
+    - title: "Dependencies"
       regexp: "^.*deps[\\(\\w\\)]*:+.*$"
       order: 2
     - title: "🔧 Other"
