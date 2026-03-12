@@ -32,11 +32,18 @@ func (c *Client) ListConnectorStatuses() (ConnectorsStatusResponse, error) {
 	if !isSuccess(status) {
 		return nil, fmt.Errorf("failed to list connector statuses: %s", string(body))
 	}
-	var connectorsStatus ConnectorsStatusResponse
-	if err := json.Unmarshal(body, &connectorsStatus); err != nil {
+	// The expand=status response wraps each entry: { "name": { "info": {}, "status": {...} } }
+	var expanded map[string]struct {
+		Status Status `json:"status"`
+	}
+	if err := json.Unmarshal(body, &expanded); err != nil {
 		return nil, err
 	}
-	return connectorsStatus, nil
+	result := make(ConnectorsStatusResponse, len(expanded))
+	for name, entry := range expanded {
+		result[name] = entry.Status
+	}
+	return result, nil
 }
 
 func (c *Client) DeleteConnector(name string) error {
