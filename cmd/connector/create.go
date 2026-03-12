@@ -17,8 +17,6 @@ import (
 // Available connectors
 var connectors = []string{
 	"RabbitMQ Connector",
-	"RabbitMQ Stream Connector",
-	"Iceberg Connector",
 }
 
 var connectorJSONPath string
@@ -42,15 +40,13 @@ var CreateCmd = &cobra.Command{
 		}
 		err := survey.AskOne(prompt, &selected)
 		if err != nil {
-			fmt.Println("please try again")
+			color.Yellow("Canceled\n")
 			return
 		}
 		color.Green("\n You selected: %s\n", selected)
 		switch selected {
 		case "RabbitMQ Connector":
 			configureRabbitMQConnector()
-		default:
-			color.Yellow("%s is not yet implemented\n", selected)
 		}
 	},
 }
@@ -115,7 +111,7 @@ func configureRabbitMQConnector() {
 	answers := make(map[string]interface{})
 	err := survey.Ask(questions, &answers)
 	if err != nil {
-		fmt.Println("Failed to get input:", err)
+		color.Red("Failed to get input: %v\n", err)
 		return
 	}
 
@@ -126,7 +122,7 @@ func configureRabbitMQConnector() {
 	for {
 		finalConfig, err := util.ToPrettyJSON(connectorConfig)
 		if err != nil {
-			fmt.Println("Failed to format config:", err)
+			color.Red("Failed to format config: %v\n", err)
 			return
 		}
 		color.Cyan("\n Current RabbitMQ Connector Configuration:\n")
@@ -139,7 +135,7 @@ func configureRabbitMQConnector() {
 		}
 		err = survey.AskOne(changePrompt, &confirmChange)
 		if err != nil {
-			fmt.Println("Prompt failed:", err)
+			color.Red("Prompt failed: %v\n", err)
 			return
 		}
 
@@ -155,7 +151,7 @@ func configureRabbitMQConnector() {
 		}
 		err = survey.AskOne(fieldPrompt, &fieldToChange)
 		if err != nil {
-			fmt.Println("Prompt failed:", err)
+			color.Red("Prompt failed: %v\n", err)
 			return
 		}
 
@@ -165,7 +161,7 @@ func configureRabbitMQConnector() {
 		}
 		err = survey.AskOne(valuePrompt, &newValue)
 		if err != nil {
-			fmt.Println("Prompt failed:", err)
+			color.Red("Prompt failed: %v\n", err)
 			return
 		}
 
@@ -174,7 +170,7 @@ func configureRabbitMQConnector() {
 	}
 	finalConfig, err := util.ToPrettyJSON(connectorConfig)
 	if err != nil {
-		fmt.Println("Failed to format config:", err)
+		color.Red("Failed to format config: %v\n", err)
 		return
 	}
 	color.Cyan("\nFinal RabbitMQ Connector Configuration:\n")
@@ -187,7 +183,7 @@ func configureRabbitMQConnector() {
 	}
 	err = survey.AskOne(submitPrompt, &submitConfirm)
 	if err != nil {
-		fmt.Println("Prompt failed:", err)
+		color.Red("Prompt failed: %v\n", err)
 		return
 	}
 

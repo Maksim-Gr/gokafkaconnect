@@ -94,7 +94,7 @@ gk --help
 gk connector list           # List connectors and inspect config
 gk connector create         # Create from predefined template
 gk connector create -f connector.json  # Create from JSON file
-gk connector delete -c <name>          # Delete a connector
+gk connector delete                    # Delete a connector (interactive)
 gk connector health-check   # Show connector and task statuses
 ```
 
@@ -138,7 +138,7 @@ This allows connector configurations to be versioned, reviewed, or restored late
 ## Planned Improvements
 
 - Update existing connector configurations
-- Additional connector templates (RabbitMQ Stream, Iceberg, S3, JDBC)
+- Additional connector templates (S3, JDBC)
 - Improved output formatting and status reporting
 - TLS / mTLS support
 

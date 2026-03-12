@@ -31,7 +31,6 @@ var RootCmd = &cobra.Command{
 			return
 		}
 
-		color.Blue("\nChecking configuration...\n")
 		cfg, err := util.LoadConfig()
 		if err != nil || cfg.KafkaConnect.URL == "" {
 			color.Yellow("No Kafka Connect URL configured.")
