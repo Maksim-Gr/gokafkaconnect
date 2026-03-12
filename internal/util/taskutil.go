@@ -45,7 +45,7 @@ func ResolveConnectorName(client *connector.Client, flagValue string) (string, b
 	var name string
 	prompt := &survey.Select{Message: "Pick connector:", Options: connectors}
 	if err := survey.AskOne(prompt, &name); err != nil {
-		color.Red("Canceled\n")
+		color.Yellow("Canceled\n")
 		return "", false
 	}
 	return name, true
@@ -82,7 +82,7 @@ func ResolveTaskID(client *connector.Client, connectorName string, flagValue int
 	var selected string
 	prompt := &survey.Select{Message: "Pick task id:", Options: options}
 	if err := survey.AskOne(prompt, &selected); err != nil {
-		color.Red("Canceled\n")
+		color.Yellow("Canceled\n")
 		return -1, false
 	}
 

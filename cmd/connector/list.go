@@ -1,6 +1,7 @@
 package connector
 
 import (
+	"encoding/json"
 	"fmt"
 	"gokafkaconnect/internal/connector"
 	"gokafkaconnect/internal/util"
@@ -9,6 +10,8 @@ import (
 	"github.com/fatih/color"
 	"github.com/spf13/cobra"
 )
+
+var listConfigName string
 
 // ListCmd represent command for retrieving connectors from API
 var ListCmd = &cobra.Command{
@@ -40,15 +43,16 @@ var ListCmd = &cobra.Command{
 			fmt.Printf("\t%s\n", connector)
 		}
 
-		var selected string
-		prompt := &survey.Select{
-			Message: "show connector config:",
-			Options: connectors,
-		}
-		err = survey.AskOne(prompt, &selected)
-		if err != nil {
-			color.Red("canceled\n")
-			return
+		selected := listConfigName
+		if selected == "" {
+			prompt := &survey.Select{
+				Message: "Show connector config:",
+				Options: connectors,
+			}
+			if err := survey.AskOne(prompt, &selected); err != nil {
+				color.Yellow("Canceled\n")
+				return
+			}
 		}
 
 		config, err := client.GetConnectorConfig(selected)
@@ -57,6 +61,20 @@ var ListCmd = &cobra.Command{
 			return
 		}
 		color.Green("config for %s connector:\n", selected)
-		fmt.Println(config)
+		var raw map[string]interface{}
+		if err := json.Unmarshal([]byte(config), &raw); err != nil {
+			fmt.Println(config)
+			return
+		}
+		pretty, err := util.ToPrettyJSON(raw)
+		if err != nil {
+			fmt.Println(config)
+			return
+		}
+		fmt.Println(pretty)
 	},
+}
+
+func init() {
+	ListCmd.Flags().StringVarP(&listConfigName, "config", "c", "", "Print config for the named connector (skips interactive prompt)")
 }

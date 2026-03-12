@@ -27,12 +27,12 @@ var BackupCmd = &cobra.Command{
 
 		connectors, err := client.ListConnectors()
 		if err != nil {
-			color.Red("Failed to dump  connector config: %v\n", err)
+			color.Red("Failed to dump connector config: %v\n", err)
 			return
 		}
 		backupFile, err := connector.BackupConnectorConfig(client, connectors, backupDir)
 		if err != nil {
-			color.Red("Failed to back up  connectors config: %v\n", err)
+			color.Red("Failed to back up connectors config: %v\n", err)
 			return
 		}
 		color.Green("Successfully created backup: %s", backupFile)

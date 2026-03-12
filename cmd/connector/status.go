@@ -9,6 +9,17 @@ import (
 	"github.com/spf13/cobra"
 )
 
+func stateColor(state string) string {
+	switch state {
+	case "RUNNING":
+		return color.GreenString(state)
+	case "FAILED":
+		return color.RedString(state)
+	default:
+		return color.YellowString(state)
+	}
+}
+
 // health-check show statuses for connectors
 var HealthCheckCmd = &cobra.Command{
 	Use:   "health-check",
@@ -26,15 +37,22 @@ var HealthCheckCmd = &cobra.Command{
 		}
 		connectorStatuses, err := client.ListConnectorStatuses()
 		if err != nil {
-			color.Red("Failed to list connector statuses: %v", err)
+			color.Red("Failed to list connector statuses: %v\n", err)
 			return
+		}
+
+		maxLen := 0
+		for name := range connectorStatuses {
+			if len(name) > maxLen {
+				maxLen = len(name)
+			}
 		}
 
 		color.Cyan("Connector Statuses:")
 		for name, status := range connectorStatuses {
-			fmt.Printf("\t%s - Connector: %s\n", name, status.Connector.State)
+			fmt.Printf("  %-*s  %s\n", maxLen, name, stateColor(status.Connector.State))
 			for _, t := range status.Tasks {
-				fmt.Printf("\t\tTask %d: %s\n", t.ID, t.State)
+				fmt.Printf("  %-*s    Task %d: %s\n", maxLen, "", t.ID, stateColor(t.State))
 			}
 		}
 	},
