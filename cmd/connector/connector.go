@@ -16,4 +16,5 @@ func init() {
 	Cmd.AddCommand(ListCmd)
 	Cmd.AddCommand(UpdateCmd)
 	Cmd.AddCommand(HealthCheckCmd)
+	Cmd.AddCommand(BackupCmd)
 }

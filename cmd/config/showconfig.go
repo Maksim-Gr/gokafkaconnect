@@ -12,7 +12,7 @@ import (
 
 // ShowConfigCmd represents the showConfig command
 var ShowConfigCmd = &cobra.Command{
-	Use:   "show-config",
+	Use:   "show",
 	Short: "Display API endpoint",
 	Long:  `Display Kafka Connect API endpoint.`,
 	Run: func(cmd *cobra.Command, args []string) {
