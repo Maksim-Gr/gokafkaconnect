@@ -86,6 +86,21 @@ func (c *Client) GetConnectorConfig(name string) (string, error) {
 	return string(body), nil
 }
 
+func (c *Client) UpdateConnectorConfig(name string, cfg map[string]interface{}) error {
+	b, err := json.Marshal(cfg)
+	if err != nil {
+		return err
+	}
+	body, status, err := c.doRequest(http.MethodPut, fmt.Sprintf("/connectors/%s/config", name), b)
+	if err != nil {
+		return err
+	}
+	if !isSuccess(status) {
+		return fmt.Errorf("failed to update connector %s: %s", name, string(body))
+	}
+	return nil
+}
+
 func (c *Client) GetConnectorConfigJSON(name string) (map[string]interface{}, error) {
 	body, status, err := c.doRequest(
 		http.MethodGet,
