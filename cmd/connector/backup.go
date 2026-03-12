@@ -1,4 +1,4 @@
-package config
+package connector
 
 import (
 	"gokafkaconnect/internal/connector"

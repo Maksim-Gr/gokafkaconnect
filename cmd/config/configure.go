@@ -16,7 +16,7 @@ var dryRun bool
 
 // ConfigureCmd represents the configure command
 var ConfigureCmd = &cobra.Command{
-	Use:   "configure",
+	Use:   "set",
 	Short: "Configure Kafka Connect REST API",
 	Long:  `Configure Kafka Connect REST API URL and authentication.`,
 	Run: func(cmd *cobra.Command, args []string) {
