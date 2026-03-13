@@ -61,7 +61,7 @@ On first run `gk` will prompt you to configure a Kafka Connect endpoint.
 You can also run configuration manually at any time:
 
 ```bash
-gk config configure
+gk config set
 ```
 
 Config file location:
@@ -109,10 +109,10 @@ gk task restart -c <name>   # Restart a task
 ### Config commands
 
 ```bash
-gk config configure         # Set Kafka Connect URL and credentials
-gk config show-config       # Display current configuration
-gk config backup            # Backup all connector configs to JSON
-gk config backup --dir ./backup
+gk config set               # Set Kafka Connect URL and credentials
+gk config show              # Display current configuration
+gk connector backup         # Backup all connector configs to JSON
+gk connector backup --dir ./backup
 ```
 
 ### Global flags
@@ -128,7 +128,7 @@ gk config backup --dir ./backup
 The `backup` command retrieves all connector configurations from the Kafka Connect cluster and stores them in a timestamped JSON file:
 
 ```bash
-gk config backup --dir ./backup
+gk connector backup --dir ./backup
 ```
 
 This allows connector configurations to be versioned, reviewed, or restored later.
