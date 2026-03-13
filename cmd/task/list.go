@@ -19,7 +19,7 @@ var listCmd = &cobra.Command{
 			return
 		}
 
-		name, ok := util.ResolveConnectorName(client, connectorName)
+		name, ok := util.ResolveConnectorName(cmd.Context(), client, connectorName)
 		if !ok {
 			return
 		}
@@ -29,7 +29,7 @@ var listCmd = &cobra.Command{
 			return
 		}
 
-		tasks, err := client.ListConnectorTasks(name)
+		tasks, err := client.ListConnectorTasks(cmd.Context(), name)
 		if err != nil {
 			color.Red("Failed to list tasks for %s: %v\n", name, err)
 			return

@@ -39,7 +39,7 @@ func WaitForKafkaConnectStartUp(t *testing.T, baseURL string, timeout time.Durat
 		}
 		time.Sleep(2 * time.Second)
 	}
-	t.Fatalf("Kafka Connect container is not ready within %s", timeout)
+	t.Fatalf("Kafka Connect container is not ready within %s timeout", timeout)
 
 }
 

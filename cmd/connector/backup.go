@@ -25,17 +25,17 @@ var BackupCmd = &cobra.Command{
 			client.SetBasicAuth(cfg.KafkaConnect.Username, cfg.KafkaConnect.Password)
 		}
 
-		connectors, err := client.ListConnectors()
+		connectors, err := client.ListConnectors(cmd.Context())
 		if err != nil {
 			color.Red("Failed to dump connector config: %v\n", err)
 			return
 		}
-		backupFile, err := connector.BackupConnectorConfig(client, connectors, backupDir)
+		backupFile, err := connector.BackupConnectorConfig(cmd.Context(), client, connectors, backupDir)
 		if err != nil {
 			color.Red("Failed to back up connectors config: %v\n", err)
 			return
 		}
-		color.Green("Successfully created backup: %s", backupFile)
+		color.Green("Successfully created backup: %s\n", backupFile)
 	},
 }
 

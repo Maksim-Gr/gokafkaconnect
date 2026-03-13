@@ -1,6 +1,7 @@
 package connector
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -80,7 +81,7 @@ func submitConnectorFromFile(path string) {
 	}
 
 	color.Green("\n Submitting connector from file: %s ...\n", path)
-	if err := client.SubmitConnector(string(b)); err != nil {
+	if err := client.SubmitConnector(context.Background(), string(b)); err != nil {
 		color.Red("Failed to submit connector: %v\n", err)
 		return
 	}
@@ -200,7 +201,7 @@ func configureRabbitMQConnector() {
 			client.SetBasicAuth(cfg.KafkaConnect.Username, cfg.KafkaConnect.Password)
 		}
 
-		err = client.SubmitConnector(finalConfig)
+		err = client.SubmitConnector(context.Background(), finalConfig)
 		if err != nil {
 			color.Red("Failed to submit connector: %v\n", err)
 		} else {

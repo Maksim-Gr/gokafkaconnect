@@ -18,13 +18,13 @@ var getCmd = &cobra.Command{
 			return
 		}
 
-		name, ok := util.ResolveConnectorName(client, connectorName)
+		name, ok := util.ResolveConnectorName(cmd.Context(), client, connectorName)
 		if !ok {
 			return
 		}
 
 		isDryRun := dryRun != nil && *dryRun
-		id, ok := util.ResolveTaskID(client, name, taskID, isDryRun)
+		id, ok := util.ResolveTaskID(cmd.Context(), client, name, taskID, isDryRun)
 		if !ok {
 			return
 		}
@@ -34,7 +34,7 @@ var getCmd = &cobra.Command{
 			return
 		}
 
-		status, err := client.GetConnectorTaskStatus(name, id)
+		status, err := client.GetConnectorTaskStatus(cmd.Context(), name, id)
 		if err != nil {
 			color.Red("Failed to get status for %s: %v\n", util.FormatTaskRef(name, id), err)
 			return

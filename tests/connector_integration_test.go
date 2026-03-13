@@ -1,6 +1,7 @@
 package tests
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -29,7 +30,7 @@ func setupConnectors(t *testing.T, client *c.Client, names []string) {
 		topic := fmt.Sprintf("test-topic-%c", 'A'+i)
 		config := fmt.Sprintf(mockSinkConfigTemplate, name, topic)
 
-		err := client.SubmitConnector(config)
+		err := client.SubmitConnector(context.Background(), config)
 		require.NoError(t, err, "creating connector: %s", name)
 	}
 }
@@ -37,7 +38,9 @@ func setupConnectors(t *testing.T, client *c.Client, names []string) {
 func cleanupConnectors(t *testing.T, client *c.Client, names []string) {
 	t.Helper()
 	for _, name := range names {
-		_ = client.DeleteConnector(name)
+		if err := client.DeleteConnector(context.Background(), name); err != nil {
+			t.Logf("cleanup: failed to delete connector %s: %v", name, err)
+		}
 	}
 }
 
@@ -57,7 +60,7 @@ func TestConnectorLifecycle(t *testing.T) {
 	t.Run("CreateAndList", func(t *testing.T) {
 		setupConnectors(t, client, connectorNames)
 
-		got, err := client.ListConnectors()
+		got, err := client.ListConnectors(context.Background())
 		require.NoError(t, err)
 
 		for _, name := range connectorNames {
@@ -69,7 +72,7 @@ func TestConnectorLifecycle(t *testing.T) {
 		var statuses c.ConnectorsStatusResponse
 		require.Eventually(t, func() bool {
 			var err error
-			statuses, err = client.ListConnectorStatuses()
+			statuses, err = client.ListConnectorStatuses(context.Background())
 			if err != nil {
 				return false
 			}
@@ -90,7 +93,7 @@ func TestConnectorLifecycle(t *testing.T) {
 	t.Run("BackupConnectorConfig", func(t *testing.T) {
 		outputDir := os.TempDir()
 
-		backupFile, err := c.BackupConnectorConfig(client, connectorNames[:2], outputDir)
+		backupFile, err := c.BackupConnectorConfig(context.Background(), client, connectorNames[:2], outputDir)
 		require.NoError(t, err, "BackupConnectorConfig should not return an error")
 
 		require.FileExists(t, backupFile, "Backup file should exist")
@@ -106,16 +109,16 @@ func TestConnectorLifecycle(t *testing.T) {
 	t.Run("DeleteOne", func(t *testing.T) {
 		target := connectorNames[2]
 
-		err := client.DeleteConnector(target)
+		err := client.DeleteConnector(context.Background(), target)
 		require.NoError(t, err)
 
-		got, err := client.ListConnectors()
+		got, err := client.ListConnectors(context.Background())
 		require.NoError(t, err)
 		require.NotContains(t, got, target)
 	})
 
 	t.Run("DeleteNonExistentReturnsError", func(t *testing.T) {
-		err := client.DeleteConnector("non-existent-connector")
+		err := client.DeleteConnector(context.Background(), "non-existent-connector")
 		require.Error(t, err)
 		require.Contains(t, err.Error(), "failed to delete connector")
 	})
@@ -131,9 +134,9 @@ func TestGetConnectorConfig(t *testing.T) {
 
 	config := fmt.Sprintf(mockSinkConfigTemplate, connectorName, topic)
 
-	require.NoError(t, client.SubmitConnector(config))
+	require.NoError(t, client.SubmitConnector(context.Background(), config))
 
-	jsonConfig, err := client.GetConnectorConfig(connectorName)
+	jsonConfig, err := client.GetConnectorConfig(context.Background(), connectorName)
 	require.NoError(t, err)
 
 	require.Contains(t, jsonConfig, "connector.class")
@@ -150,9 +153,9 @@ func TestSubmitAndList(t *testing.T) {
 
 	config := fmt.Sprintf(mockSinkConfigTemplate, connectorName, topic)
 
-	require.NoError(t, client.SubmitConnector(config))
+	require.NoError(t, client.SubmitConnector(context.Background(), config))
 
-	got, err := client.ListConnectors()
+	got, err := client.ListConnectors(context.Background())
 	require.NoError(t, err)
 	require.Contains(t, got, connectorName)
 }

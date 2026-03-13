@@ -2,6 +2,7 @@ package connector
 
 import (
 	"bytes"
+	"context"
 	"io"
 	"net/http"
 	"strings"
@@ -29,8 +30,9 @@ func (c *Client) SetBasicAuth(username, password string) {
 	c.password = password
 }
 
-func (c *Client) doRequest(method, path string, body []byte) ([]byte, int, error) {
-	req, err := http.NewRequest(
+func (c *Client) doRequest(ctx context.Context, method, path string, body []byte) ([]byte, int, error) {
+	req, err := http.NewRequestWithContext(
+		ctx,
 		method,
 		c.baseURL+path,
 		bytes.NewReader(body),

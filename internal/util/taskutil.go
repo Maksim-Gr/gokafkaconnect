@@ -1,6 +1,7 @@
 package util
 
 import (
+	"context"
 	"fmt"
 	"strconv"
 
@@ -27,18 +28,18 @@ func NewKafkaConnectClient() (*connector.Client, bool) {
 // ResolveConnectorName returns a connector name from:
 //  1. provided flag value (if not empty), or
 //  2. interactive selection from the API.
-func ResolveConnectorName(client *connector.Client, flagValue string) (string, bool) {
+func ResolveConnectorName(ctx context.Context, client *connector.Client, flagValue string) (string, bool) {
 	if flagValue != "" {
 		return flagValue, true
 	}
 
-	connectors, err := client.ListConnectors()
+	connectors, err := client.ListConnectors(ctx)
 	if err != nil {
 		color.Red("Failed to list connectors: %v\n", err)
 		return "", false
 	}
 	if len(connectors) == 0 {
-		color.Yellow("No connectors found")
+		color.Yellow("No connectors found\n")
 		return "", false
 	}
 
@@ -54,9 +55,23 @@ func ResolveConnectorName(client *connector.Client, flagValue string) (string, b
 // ResolveTaskID returns a task id from:
 //  1. provided flag value (if >= 0), or
 //  2. interactive selection from the API.
-func ResolveTaskID(client *connector.Client, connectorName string, flagValue int, dryRun bool) (int, bool) {
+func ResolveTaskID(ctx context.Context, client *connector.Client, connectorName string, flagValue int, dryRun bool) (int, bool) {
 	if flagValue >= 0 {
-		return flagValue, true
+		if dryRun {
+			return flagValue, true
+		}
+		tasks, err := client.ListConnectorTasks(ctx, connectorName)
+		if err != nil {
+			color.Red("Failed to list tasks for %s: %v\n", connectorName, err)
+			return -1, false
+		}
+		for _, t := range tasks {
+			if t.Task == flagValue {
+				return flagValue, true
+			}
+		}
+		color.Red("Task %d not found for connector %s\n", flagValue, connectorName)
+		return -1, false
 	}
 
 	if dryRun {
@@ -64,7 +79,7 @@ func ResolveTaskID(client *connector.Client, connectorName string, flagValue int
 		return -1, false
 	}
 
-	tasks, err := client.ListConnectorTasks(connectorName)
+	tasks, err := client.ListConnectorTasks(ctx, connectorName)
 	if err != nil {
 		color.Red("Failed to list tasks for %s: %v\n", connectorName, err)
 		return -1, false
