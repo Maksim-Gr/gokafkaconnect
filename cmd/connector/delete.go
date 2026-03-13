@@ -25,13 +25,13 @@ var DeleteCmd = &cobra.Command{
 			client.SetBasicAuth(cfg.KafkaConnect.Username, cfg.KafkaConnect.Password)
 		}
 
-		connectors, err := client.ListConnectors()
+		connectors, err := client.ListConnectors(cmd.Context())
 		if err != nil {
 			color.Red("Failed to list connectors: %v\n", err)
 			return
 		}
 		if len(connectors) == 0 {
-			color.Yellow("No connectors found")
+			color.Yellow("No connectors found\n")
 			return
 		}
 
@@ -48,17 +48,19 @@ var DeleteCmd = &cobra.Command{
 		if err := survey.AskOne(&survey.Confirm{
 			Message: "Delete " + selected + "?",
 			Default: false,
-		}, &confirmed); err != nil || !confirmed {
+		}, &confirmed); err != nil {
+			color.Yellow("Canceled\n")
+			return
+		}
+		if !confirmed {
 			color.Yellow("Canceled\n")
 			return
 		}
 
-		if err := client.DeleteConnector(selected); err != nil {
+		if err := client.DeleteConnector(cmd.Context(), selected); err != nil {
 			color.Red("Failed to delete connector: %v\n", err)
 		} else {
 			color.Green("Connector %s deleted\n", selected)
 		}
 	},
 }
-
-func init() {}

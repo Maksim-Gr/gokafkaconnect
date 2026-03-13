@@ -26,7 +26,7 @@ var UpdateCmd = &cobra.Command{
 			client.SetBasicAuth(cfg.KafkaConnect.Username, cfg.KafkaConnect.Password)
 		}
 
-		connectors, err := client.ListConnectors()
+		connectors, err := client.ListConnectors(cmd.Context())
 		if err != nil {
 			color.Red("Failed to list connectors: %v\n", err)
 			return
@@ -45,7 +45,7 @@ var UpdateCmd = &cobra.Command{
 			return
 		}
 
-		connectorConfig, err := client.GetConnectorConfigJSON(selected)
+		connectorConfig, err := client.GetConnectorConfigJSON(cmd.Context(), selected)
 		if err != nil {
 			color.Red("Failed to get connector config: %v\n", err)
 			return
@@ -88,7 +88,11 @@ var UpdateCmd = &cobra.Command{
 			if err := survey.AskOne(&survey.Confirm{
 				Message: "Change another field?",
 				Default: false,
-			}, &more); err != nil || !more {
+			}, &more); err != nil {
+				color.Yellow("Canceled\n")
+				return
+			}
+			if !more {
 				break
 			}
 		}
@@ -105,12 +109,16 @@ var UpdateCmd = &cobra.Command{
 		if err := survey.AskOne(&survey.Confirm{
 			Message: "Apply this config to " + selected + "?",
 			Default: true,
-		}, &confirm); err != nil || !confirm {
+		}, &confirm); err != nil {
+			color.Yellow("Canceled\n")
+			return
+		}
+		if !confirm {
 			color.Yellow("Canceled\n")
 			return
 		}
 
-		if err := client.UpdateConnectorConfig(selected, connectorConfig); err != nil {
+		if err := client.UpdateConnectorConfig(cmd.Context(), selected, connectorConfig); err != nil {
 			color.Red("Failed to update connector: %v\n", err)
 			return
 		}

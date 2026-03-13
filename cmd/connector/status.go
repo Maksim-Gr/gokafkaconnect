@@ -35,7 +35,7 @@ var HealthCheckCmd = &cobra.Command{
 		if cfg.KafkaConnect.Username != "" {
 			client.SetBasicAuth(cfg.KafkaConnect.Username, cfg.KafkaConnect.Password)
 		}
-		connectorStatuses, err := client.ListConnectorStatuses()
+		connectorStatuses, err := client.ListConnectorStatuses(cmd.Context())
 		if err != nil {
 			color.Red("Failed to list connector statuses: %v\n", err)
 			return

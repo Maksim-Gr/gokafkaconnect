@@ -1,6 +1,7 @@
 package connector
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -9,8 +10,8 @@ import (
 	"time"
 )
 
-func (c *Client) ListConnectors() ([]string, error) {
-	body, status, err := c.doRequest(http.MethodGet, "/connectors", nil)
+func (c *Client) ListConnectors(ctx context.Context) ([]string, error) {
+	body, status, err := c.doRequest(ctx, http.MethodGet, "/connectors", nil)
 	if err != nil {
 		return nil, err
 	}
@@ -24,8 +25,8 @@ func (c *Client) ListConnectors() ([]string, error) {
 	return connectors, nil
 }
 
-func (c *Client) ListConnectorStatuses() (ConnectorsStatusResponse, error) {
-	body, status, err := c.doRequest(http.MethodGet, "/connectors?expand=status", nil)
+func (c *Client) ListConnectorStatuses(ctx context.Context) (ConnectorsStatusResponse, error) {
+	body, status, err := c.doRequest(ctx, http.MethodGet, "/connectors?expand=status", nil)
 	if err != nil {
 		return nil, err
 	}
@@ -46,8 +47,8 @@ func (c *Client) ListConnectorStatuses() (ConnectorsStatusResponse, error) {
 	return result, nil
 }
 
-func (c *Client) DeleteConnector(name string) error {
-	body, status, err := c.doRequest(http.MethodDelete, fmt.Sprintf("/connectors/%s", name), nil)
+func (c *Client) DeleteConnector(ctx context.Context, name string) error {
+	body, status, err := c.doRequest(ctx, http.MethodDelete, fmt.Sprintf("/connectors/%s", name), nil)
 	if err != nil {
 		return err
 	}
@@ -60,8 +61,8 @@ func (c *Client) DeleteConnector(name string) error {
 	return nil
 }
 
-func (c *Client) SubmitConnector(configJson string) error {
-	body, status, err := c.doRequest(http.MethodPost, "/connectors", []byte(configJson))
+func (c *Client) SubmitConnector(ctx context.Context, configJson string) error {
+	body, status, err := c.doRequest(ctx, http.MethodPost, "/connectors", []byte(configJson))
 	if err != nil {
 		return err
 	}
@@ -71,8 +72,9 @@ func (c *Client) SubmitConnector(configJson string) error {
 	return nil
 }
 
-func (c *Client) GetConnectorConfig(name string) (string, error) {
+func (c *Client) GetConnectorConfig(ctx context.Context, name string) (string, error) {
 	body, status, err := c.doRequest(
+		ctx,
 		http.MethodGet,
 		"/connectors/"+name+"/config",
 		nil,
@@ -86,12 +88,12 @@ func (c *Client) GetConnectorConfig(name string) (string, error) {
 	return string(body), nil
 }
 
-func (c *Client) UpdateConnectorConfig(name string, cfg map[string]interface{}) error {
+func (c *Client) UpdateConnectorConfig(ctx context.Context, name string, cfg map[string]interface{}) error {
 	b, err := json.Marshal(cfg)
 	if err != nil {
 		return err
 	}
-	body, status, err := c.doRequest(http.MethodPut, fmt.Sprintf("/connectors/%s/config", name), b)
+	body, status, err := c.doRequest(ctx, http.MethodPut, fmt.Sprintf("/connectors/%s/config", name), b)
 	if err != nil {
 		return err
 	}
@@ -101,8 +103,9 @@ func (c *Client) UpdateConnectorConfig(name string, cfg map[string]interface{}) 
 	return nil
 }
 
-func (c *Client) GetConnectorConfigJSON(name string) (map[string]interface{}, error) {
+func (c *Client) GetConnectorConfigJSON(ctx context.Context, name string) (map[string]interface{}, error) {
 	body, status, err := c.doRequest(
+		ctx,
 		http.MethodGet,
 		"/connectors/"+name+"/config",
 		nil,
@@ -122,6 +125,7 @@ func (c *Client) GetConnectorConfigJSON(name string) (map[string]interface{}, er
 }
 
 func BackupConnectorConfig(
+	ctx context.Context,
 	client *Client,
 	connectors []string,
 	outputDir string,
@@ -130,7 +134,7 @@ func BackupConnectorConfig(
 	dumpConfig := make(map[string]map[string]interface{})
 
 	for _, name := range connectors {
-		cfg, err := client.GetConnectorConfigJSON(name)
+		cfg, err := client.GetConnectorConfigJSON(ctx, name)
 		if err != nil {
 			return "", err
 		}

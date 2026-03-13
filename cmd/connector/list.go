@@ -28,14 +28,14 @@ var ListCmd = &cobra.Command{
 		if cfg.KafkaConnect.Username != "" {
 			client.SetBasicAuth(cfg.KafkaConnect.Username, cfg.KafkaConnect.Password)
 		}
-		connectors, err := client.ListConnectors()
+		connectors, err := client.ListConnectors(cmd.Context())
 		if err != nil {
 			color.Red("Failed to list connector: %v\n", err)
 			return
 		}
 
 		if len(connectors) == 0 {
-			color.Yellow("No connectors found")
+			color.Yellow("No connectors found\n")
 			return
 		}
 		color.Cyan("Connectors:")
@@ -55,7 +55,7 @@ var ListCmd = &cobra.Command{
 			}
 		}
 
-		config, err := client.GetConnectorConfig(selected)
+		config, err := client.GetConnectorConfig(cmd.Context(), selected)
 		if err != nil {
 			color.Red("Failed to get connector config: %v\n", err)
 			return

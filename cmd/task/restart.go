@@ -19,13 +19,13 @@ var restartCmd = &cobra.Command{
 			return
 		}
 
-		name, ok := util.ResolveConnectorName(client, connectorName)
+		name, ok := util.ResolveConnectorName(cmd.Context(), client, connectorName)
 		if !ok {
 			return
 		}
 
 		isDryRun := dryRun != nil && *dryRun
-		id, ok := util.ResolveTaskID(client, name, taskID, isDryRun)
+		id, ok := util.ResolveTaskID(cmd.Context(), client, name, taskID, isDryRun)
 		if !ok {
 			return
 		}
@@ -40,12 +40,16 @@ var restartCmd = &cobra.Command{
 			Message: fmt.Sprintf("Restart %s?", util.FormatTaskRef(name, id)),
 			Default: true,
 		}
-		if err := survey.AskOne(confirmPrompt, &confirm); err != nil || !confirm {
+		if err := survey.AskOne(confirmPrompt, &confirm); err != nil {
+			color.Yellow("Canceled\n")
+			return
+		}
+		if !confirm {
 			color.Yellow("Canceled\n")
 			return
 		}
 
-		if err := client.RestartConnectorTask(name, id); err != nil {
+		if err := client.RestartConnectorTask(cmd.Context(), name, id); err != nil {
 			color.Red("Failed to restart %s: %v\n", util.FormatTaskRef(name, id), err)
 			return
 		}

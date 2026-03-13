@@ -1,6 +1,7 @@
 package connector
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -21,10 +22,10 @@ type TaskStatus struct {
 }
 
 // ListConnectorTasks lists tasks for a connector.
-func (c *Client) ListConnectorTasks(connectorName string) ([]TaskRef, error) {
+func (c *Client) ListConnectorTasks(ctx context.Context, connectorName string) ([]TaskRef, error) {
 	path := fmt.Sprintf("/connectors/%s/tasks", connectorName)
 
-	body, status, err := c.doRequest(http.MethodGet, path, nil)
+	body, status, err := c.doRequest(ctx, http.MethodGet, path, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -40,10 +41,10 @@ func (c *Client) ListConnectorTasks(connectorName string) ([]TaskRef, error) {
 }
 
 // GetConnectorTaskStatus fetches the status of a single task.
-func (c *Client) GetConnectorTaskStatus(connectorName string, taskID int) (TaskStatus, error) {
+func (c *Client) GetConnectorTaskStatus(ctx context.Context, connectorName string, taskID int) (TaskStatus, error) {
 	path := fmt.Sprintf("/connectors/%s/tasks/%d/status", connectorName, taskID)
 
-	body, status, err := c.doRequest(http.MethodGet, path, nil)
+	body, status, err := c.doRequest(ctx, http.MethodGet, path, nil)
 	if err != nil {
 		return TaskStatus{}, err
 	}
@@ -59,10 +60,10 @@ func (c *Client) GetConnectorTaskStatus(connectorName string, taskID int) (TaskS
 }
 
 // RestartConnectorTask restarts a single task.
-func (c *Client) RestartConnectorTask(connectorName string, taskID int) error {
+func (c *Client) RestartConnectorTask(ctx context.Context, connectorName string, taskID int) error {
 	path := fmt.Sprintf("/connectors/%s/tasks/%d/restart", connectorName, taskID)
 
-	body, status, err := c.doRequest(http.MethodPost, path, nil)
+	body, status, err := c.doRequest(ctx, http.MethodPost, path, nil)
 	if err != nil {
 		return err
 	}
