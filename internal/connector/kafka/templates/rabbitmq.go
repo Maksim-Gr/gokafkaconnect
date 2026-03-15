@@ -1,5 +1,7 @@
 package templates
 
+import "maps"
+
 var defaultRabbitMQConfig = map[string]string{
 	"connector.class":                       "com.ibm.eventstreams.connect.rabbitmqsource.RabbitMQSourceConnector",
 	"rabbitmq.topology.recovery.enabled":    "true",
@@ -18,9 +20,7 @@ var defaultRabbitMQConfig = map[string]string{
 
 func GetRabbitMQConnectorTemplate() map[string]string {
 	configCopy := make(map[string]string)
-	for k, v := range defaultRabbitMQConfig {
-		configCopy[k] = v
-	}
+	maps.Copy(configCopy, defaultRabbitMQConfig)
 	return configCopy
 }
 
