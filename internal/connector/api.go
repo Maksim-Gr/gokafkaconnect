@@ -130,7 +130,6 @@ func BackupConnectorConfig(
 	connectors []string,
 	outputDir string,
 ) (string, error) {
-
 	dumpConfig := make(map[string]map[string]interface{})
 
 	for _, name := range connectors {

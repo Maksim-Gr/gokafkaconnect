@@ -15,14 +15,14 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// Available connectors
+// Available connectors.
 var connectors = []string{
 	"RabbitMQ Connector",
 }
 
 var connectorJSONPath string
 
-// CreateCmd represents the create command
+// CreateCmd represents the create command.
 var CreateCmd = &cobra.Command{
 	Use:   "create",
 	Short: "Create a connector from predefined configuration",
@@ -89,7 +89,6 @@ func submitConnectorFromFile(path string) {
 }
 
 func configureRabbitMQConnector() {
-
 	color.Yellow("\n  Starting configuration for RabbitMQ Connector...\n")
 
 	connectorConfig := template.GetRabbitMQConnectorTemplate()
@@ -167,7 +166,6 @@ func configureRabbitMQConnector() {
 		}
 
 		connectorConfig[fieldToChange] = newValue
-
 	}
 	finalConfig, err := util.ToPrettyJSON(connectorConfig)
 	if err != nil {
@@ -207,9 +205,7 @@ func configureRabbitMQConnector() {
 		} else {
 			color.Green("Connector submitted successfully!\n")
 		}
-
 	} else {
 		color.Yellow("\n Submission cancelled. Exiting.\n")
 	}
-
 }

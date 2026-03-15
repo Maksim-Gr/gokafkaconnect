@@ -9,7 +9,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// DeleteCmd represents the delete command
+// DeleteCmd represents the delete command.
 var DeleteCmd = &cobra.Command{
 	Use:   "delete",
 	Short: "delete connector",

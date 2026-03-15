@@ -10,7 +10,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// ShowConfigCmd represents the showConfig command
+// ShowConfigCmd represents the showConfig command.
 var ShowConfigCmd = &cobra.Command{
 	Use:   "show",
 	Short: "Display API endpoint",

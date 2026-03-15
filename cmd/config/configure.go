@@ -14,7 +14,7 @@ import (
 
 var dryRun bool
 
-// ConfigureCmd represents the configure command
+// ConfigureCmd represents the configure command.
 var ConfigureCmd = &cobra.Command{
 	Use:   "set",
 	Short: "Configure Kafka Connect REST API",

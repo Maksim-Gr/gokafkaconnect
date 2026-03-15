@@ -15,7 +15,7 @@ import (
 
 var DryRun bool
 
-// RootCmd represents the base command when called without any subcommands
+// RootCmd represents the base command when called without any subcommands.
 var RootCmd = &cobra.Command{
 	Use:   "gk",
 	Short: "CLI to manage Kafka connector fast and easy!",

@@ -73,7 +73,7 @@ func ValidateURL(input string) error {
 	return nil
 }
 
-// SaveConfig saves config to file
+// SaveConfig saves config to file.
 func SaveConfig(cfg RestAPIConfig, configPath string) error {
 	// Create a directory if not exists
 	err := os.MkdirAll(filepath.Dir(configPath), 0o700)

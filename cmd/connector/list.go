@@ -13,7 +13,7 @@ import (
 
 var listConfigName string
 
-// ListCmd represent command for retrieving connectors from API
+// ListCmd represent command for retrieving connectors from API.
 var ListCmd = &cobra.Command{
 	Use:   "list",
 	Short: "List running connector",

@@ -20,7 +20,7 @@ func stateColor(state string) string {
 	}
 }
 
-// health-check show statuses for connectors
+// health-check show statuses for connectors.
 var HealthCheckCmd = &cobra.Command{
 	Use:   "health-check",
 	Short: "Show connector statuses",
