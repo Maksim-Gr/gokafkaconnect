@@ -18,6 +18,10 @@ import (
 // Available connectors.
 var connectors = []string{
 	"RabbitMQ Connector",
+	"Debezium PostgreSQL CDC",
+	"JDBC Source Connector",
+	"JDBC Sink Connector",
+	"S3 Sink Connector",
 }
 
 var connectorJSONPath string
@@ -47,7 +51,15 @@ var CreateCmd = &cobra.Command{
 		color.Green("\n You selected: %s\n", selected)
 		switch selected {
 		case "RabbitMQ Connector":
-			configureRabbitMQConnector()
+			configureConnector("RabbitMQ Connector", template.GetRabbitMQConnectorTemplate(), template.RabbitMQRequiredFields(), "rabbitmq.password")
+		case "Debezium PostgreSQL CDC":
+			configureConnector("Debezium PostgreSQL CDC", template.GetDebeziumPostgresConnectorTemplate(), template.DebeziumPostgresRequiredFields(), "database.password")
+		case "JDBC Source Connector":
+			configureConnector("JDBC Source Connector", template.GetJDBCSourceConnectorTemplate(), template.JDBCSourceRequiredFields(), "connection.password")
+		case "JDBC Sink Connector":
+			configureConnector("JDBC Sink Connector", template.GetJDBCSinkConnectorTemplate(), template.JDBCSinkRequiredFields(), "connection.password")
+		case "S3 Sink Connector":
+			configureConnector("S3 Sink Connector", template.GetS3SinkConnectorTemplate(), template.S3SinkRequiredFields(), "")
 		}
 	},
 }
@@ -88,15 +100,13 @@ func submitConnectorFromFile(path string) {
 	color.Green("Connector submitted successfully!\n")
 }
 
-func configureRabbitMQConnector() {
-	color.Yellow("\n  Starting configuration for RabbitMQ Connector...\n")
-
-	connectorConfig := template.GetRabbitMQConnectorTemplate()
+func configureConnector(name string, connectorConfig map[string]string, required []string, passwordField string) {
+	color.Yellow("\n  Starting configuration for %s...\n", name)
 
 	var questions []*survey.Question
-	for _, field := range template.RabbitMQRequiredFields() {
+	for _, field := range required {
 		var prompt survey.Prompt
-		if field == "rabbitmq.password" {
+		if field == passwordField {
 			prompt = &survey.Password{Message: fmt.Sprintf("Enter %s:", field)}
 		} else {
 			prompt = &survey.Input{Message: fmt.Sprintf("Enter %s:", field)}
@@ -125,7 +135,7 @@ func configureRabbitMQConnector() {
 			color.Red("Failed to format config: %v\n", err)
 			return
 		}
-		color.Cyan("\n Current RabbitMQ Connector Configuration:\n")
+		color.Cyan("\n Current %s Configuration:\n", name)
 		fmt.Println(finalConfig)
 
 		var confirmChange bool
@@ -172,7 +182,7 @@ func configureRabbitMQConnector() {
 		color.Red("Failed to format config: %v\n", err)
 		return
 	}
-	color.Cyan("\nFinal RabbitMQ Connector Configuration:\n")
+	color.Cyan("\nFinal %s Configuration:\n", name)
 	fmt.Println(finalConfig)
 
 	var submitConfirm bool
