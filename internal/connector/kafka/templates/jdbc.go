@@ -3,15 +3,15 @@ package templates
 import "maps"
 
 var defaultJDBCSourceConfig = map[string]string{
-	"connector.class":        "io.confluent.connect.jdbc.JdbcSourceConnector",
-	"tasks.max":              "1",
-	"connection.url":         "",
-	"connection.user":        "",
-	"connection.password":    "",
-	"mode":                   "incrementing",
+	"connector.class":          "io.confluent.connect.jdbc.JdbcSourceConnector",
+	"tasks.max":                "1",
+	"connection.url":           "",
+	"connection.user":          "",
+	"connection.password":      "",
+	"mode":                     "incrementing",
 	"incrementing.column.name": "",
-	"topic.prefix":           "",
-	"poll.interval.ms":       "5000",
+	"topic.prefix":             "",
+	"poll.interval.ms":         "5000",
 }
 
 func GetJDBCSourceConnectorTemplate() map[string]string {

@@ -3,17 +3,17 @@ package templates
 import "maps"
 
 var defaultDebeziumPostgresConfig = map[string]string{
-	"connector.class":     "io.debezium.connector.postgresql.PostgresConnector",
-	"tasks.max":           "1",
-	"database.hostname":   "",
-	"database.port":       "5432",
-	"database.user":       "",
-	"database.password":   "",
-	"database.dbname":     "",
+	"connector.class":      "io.debezium.connector.postgresql.PostgresConnector",
+	"tasks.max":            "1",
+	"database.hostname":    "",
+	"database.port":        "5432",
+	"database.user":        "",
+	"database.password":    "",
+	"database.dbname":      "",
 	"database.server.name": "",
-	"plugin.name":         "pgoutput",
-	"table.include.list":  "",
-	"topic.prefix":        "",
+	"plugin.name":          "pgoutput",
+	"table.include.list":   "",
+	"topic.prefix":         "",
 }
 
 func GetDebeziumPostgresConnectorTemplate() map[string]string {
