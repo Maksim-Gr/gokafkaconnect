@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/AlecAivazis/survey/v2/terminal"
 	"gopkg.in/yaml.v3"
 )
 
@@ -102,4 +103,8 @@ func LoadConfig() (RestAPIConfig, error) {
 	}
 	err = yaml.Unmarshal(data, &cfg)
 	return cfg, err
+}
+
+func IsSurveyInterrupt(err error) bool {
+	return errors.Is(err, terminal.InterruptErr)
 }

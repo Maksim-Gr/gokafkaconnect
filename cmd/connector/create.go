@@ -121,7 +121,11 @@ func configureConnector(name string, connectorConfig map[string]string, required
 	answers := make(map[string]interface{})
 	err := survey.Ask(questions, &answers)
 	if err != nil {
-		color.Red("Failed to get input: %v\n", err)
+		if util.IsSurveyInterrupt(err) {
+			color.Yellow("Canceled\n")
+		} else {
+			color.Red("Failed to get input: %v\n", err)
+		}
 		return
 	}
 
@@ -145,7 +149,11 @@ func configureConnector(name string, connectorConfig map[string]string, required
 		}
 		err = survey.AskOne(changePrompt, &confirmChange)
 		if err != nil {
-			color.Red("Prompt failed: %v\n", err)
+			if util.IsSurveyInterrupt(err) {
+				color.Yellow("Canceled\n")
+			} else {
+				color.Red("Prompt failed: %v\n", err)
+			}
 			return
 		}
 
@@ -161,7 +169,11 @@ func configureConnector(name string, connectorConfig map[string]string, required
 		}
 		err = survey.AskOne(fieldPrompt, &fieldToChange)
 		if err != nil {
-			color.Red("Prompt failed: %v\n", err)
+			if util.IsSurveyInterrupt(err) {
+				color.Yellow("Canceled\n")
+			} else {
+				color.Red("Prompt failed: %v\n", err)
+			}
 			return
 		}
 
@@ -171,7 +183,11 @@ func configureConnector(name string, connectorConfig map[string]string, required
 		}
 		err = survey.AskOne(valuePrompt, &newValue)
 		if err != nil {
-			color.Red("Prompt failed: %v\n", err)
+			if util.IsSurveyInterrupt(err) {
+				color.Yellow("Canceled\n")
+			} else {
+				color.Red("Prompt failed: %v\n", err)
+			}
 			return
 		}
 
@@ -192,7 +208,11 @@ func configureConnector(name string, connectorConfig map[string]string, required
 	}
 	err = survey.AskOne(submitPrompt, &submitConfirm)
 	if err != nil {
-		color.Red("Prompt failed: %v\n", err)
+		if util.IsSurveyInterrupt(err) {
+			color.Yellow("Canceled\n")
+		} else {
+			color.Red("Prompt failed: %v\n", err)
+		}
 		return
 	}
 
