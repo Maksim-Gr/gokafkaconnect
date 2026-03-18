@@ -69,7 +69,11 @@ var ConfigureCmd = &cobra.Command{
 			},
 		))
 		if err != nil {
-			color.Red("Failed: %v", err)
+			if util.IsSurveyInterrupt(err) {
+				color.Yellow("Canceled\n")
+				return
+			}
+			color.Red("Failed to read URL: %v", err)
 			os.Exit(1)
 		}
 
@@ -87,6 +91,10 @@ var ConfigureCmd = &cobra.Command{
 		}
 
 		if err := survey.AskOne(userPrompt, &inputUser); err != nil {
+			if util.IsSurveyInterrupt(err) {
+				color.Yellow("Canceled\n")
+				return
+			}
 			color.Red("Failed to read username: %v", err)
 			os.Exit(1)
 		}
@@ -103,6 +111,10 @@ var ConfigureCmd = &cobra.Command{
 				Help:    "Password will be stored in your local config file",
 			}
 			if err := survey.AskOne(passPrompt, &inputPass); err != nil {
+				if util.IsSurveyInterrupt(err) {
+					color.Yellow("Canceled\n")
+					return
+				}
 				color.Red("Failed to read password: %v", err)
 				os.Exit(1)
 			}
