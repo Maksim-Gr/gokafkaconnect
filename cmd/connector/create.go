@@ -93,7 +93,7 @@ func submitConnectorFromFile(path string) {
 	}
 
 	color.Green("\n Submitting connector from file: %s ...\n", path)
-	if err := client.SubmitConnector(context.Background(), string(b)); err != nil {
+	if _, err := client.SubmitConnector(context.Background(), string(b)); err != nil {
 		color.Red("Failed to submit connector: %v\n", err)
 		return
 	}
@@ -229,7 +229,7 @@ func configureConnector(name string, connectorConfig map[string]string, required
 			client.SetBasicAuth(cfg.KafkaConnect.Username, cfg.KafkaConnect.Password)
 		}
 
-		err = client.SubmitConnector(context.Background(), finalConfig)
+		_, err = client.SubmitConnector(context.Background(), finalConfig)
 		if err != nil {
 			color.Red("Failed to submit connector: %v\n", err)
 		} else {
