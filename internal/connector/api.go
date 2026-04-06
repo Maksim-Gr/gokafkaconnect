@@ -34,9 +34,7 @@ func (c *Client) ListConnectorStatuses(ctx context.Context) (ConnectorsStatusRes
 		return nil, fmt.Errorf("failed to list connector statuses: %s", string(body))
 	}
 	// The expand=status response wraps each entry: { "name": { "info": {}, "status": {...} } }
-	var expanded map[string]struct {
-		Status Status `json:"status"`
-	}
+	var expanded map[string]expandedEntry
 	if err := json.Unmarshal(body, &expanded); err != nil {
 		return nil, err
 	}
@@ -61,15 +59,19 @@ func (c *Client) DeleteConnector(ctx context.Context, name string) error {
 	return nil
 }
 
-func (c *Client) SubmitConnector(ctx context.Context, configJson string) error {
+func (c *Client) SubmitConnector(ctx context.Context, configJson string) (ConnectorInfo, error) {
 	body, status, err := c.doRequest(ctx, http.MethodPost, "/connectors", []byte(configJson))
 	if err != nil {
-		return err
+		return ConnectorInfo{}, err
 	}
 	if !isSuccess(status) {
-		return fmt.Errorf("failed to submit connector configuration: %s", string(body))
+		return ConnectorInfo{}, fmt.Errorf("failed to submit connector configuration: %s", string(body))
 	}
-	return nil
+	var info ConnectorInfo
+	if err := json.Unmarshal(body, &info); err != nil {
+		return ConnectorInfo{}, err
+	}
+	return info, nil
 }
 
 func (c *Client) GetConnectorConfig(ctx context.Context, name string) (string, error) {
@@ -88,7 +90,7 @@ func (c *Client) GetConnectorConfig(ctx context.Context, name string) (string, e
 	return string(body), nil
 }
 
-func (c *Client) UpdateConnectorConfig(ctx context.Context, name string, cfg map[string]interface{}) error {
+func (c *Client) UpdateConnectorConfig(ctx context.Context, name string, cfg map[string]string) error {
 	b, err := json.Marshal(cfg)
 	if err != nil {
 		return err
@@ -103,7 +105,7 @@ func (c *Client) UpdateConnectorConfig(ctx context.Context, name string, cfg map
 	return nil
 }
 
-func (c *Client) GetConnectorConfigJSON(ctx context.Context, name string) (map[string]interface{}, error) {
+func (c *Client) GetConnectorConfigJSON(ctx context.Context, name string) (map[string]string, error) {
 	body, status, err := c.doRequest(
 		ctx,
 		http.MethodGet,
@@ -117,7 +119,7 @@ func (c *Client) GetConnectorConfigJSON(ctx context.Context, name string) (map[s
 		return nil, fmt.Errorf("failed to get config for %s: %s", name, body)
 	}
 
-	var cfg map[string]interface{}
+	var cfg map[string]string
 	if err := json.Unmarshal(body, &cfg); err != nil {
 		return nil, err
 	}
@@ -130,7 +132,7 @@ func BackupConnectorConfig(
 	connectors []string,
 	outputDir string,
 ) (string, error) {
-	dumpConfig := make(map[string]map[string]interface{})
+	dumpConfig := make(map[string]map[string]string)
 
 	for _, name := range connectors {
 		cfg, err := client.GetConnectorConfigJSON(ctx, name)

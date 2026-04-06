@@ -30,7 +30,7 @@ func setupConnectors(t *testing.T, client *c.Client, names []string) {
 		topic := fmt.Sprintf("test-topic-%c", 'A'+i)
 		config := fmt.Sprintf(mockSinkConfigTemplate, name, topic)
 
-		err := client.SubmitConnector(context.Background(), config)
+		_, err := client.SubmitConnector(context.Background(), config)
 		require.NoError(t, err, "creating connector: %s", name)
 	}
 }
@@ -134,7 +134,8 @@ func TestGetConnectorConfig(t *testing.T) {
 
 	config := fmt.Sprintf(mockSinkConfigTemplate, connectorName, topic)
 
-	require.NoError(t, client.SubmitConnector(context.Background(), config))
+	_, err := client.SubmitConnector(context.Background(), config)
+	require.NoError(t, err)
 
 	jsonConfig, err := client.GetConnectorConfig(context.Background(), connectorName)
 	require.NoError(t, err)
@@ -153,7 +154,8 @@ func TestSubmitAndList(t *testing.T) {
 
 	config := fmt.Sprintf(mockSinkConfigTemplate, connectorName, topic)
 
-	require.NoError(t, client.SubmitConnector(context.Background(), config))
+	_, err := client.SubmitConnector(context.Background(), config)
+	require.NoError(t, err)
 
 	got, err := client.ListConnectors(context.Background())
 	require.NoError(t, err)
