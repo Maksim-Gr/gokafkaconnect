@@ -13,7 +13,7 @@ var restartCmd = &cobra.Command{
 	Use:   "restart",
 	Short: "Restart a task",
 	Long:  "Restarts a single Kafka Connect task (select interactively or use --connector and --id).",
-	Run: func(cmd *cobra.Command, args []string) {
+	Run: func(cmd *cobra.Command, _ []string) {
 		client, ok := util.NewKafkaConnectClient()
 		if !ok {
 			return

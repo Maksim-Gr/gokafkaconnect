@@ -20,12 +20,12 @@ func stateColor(state string) string {
 	}
 }
 
-// health-check show statuses for connectors.
+// HealthCheckCmd shows connector and task statuses.
 var HealthCheckCmd = &cobra.Command{
 	Use:   "health-check",
 	Short: "Show connector statuses",
 	Long:  `Show each connector status`,
-	Run: func(cmd *cobra.Command, args []string) {
+	Run: func(cmd *cobra.Command, _ []string) {
 		cfg, err := util.LoadConfig()
 		if err != nil {
 			color.Red("Failed to load config: %v\n", err)

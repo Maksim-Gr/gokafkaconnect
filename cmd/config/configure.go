@@ -19,7 +19,7 @@ var ConfigureCmd = &cobra.Command{
 	Use:   "set",
 	Short: "Configure Kafka Connect REST API",
 	Long:  `Configure Kafka Connect REST API URL and authentication.`,
-	Run: func(cmd *cobra.Command, args []string) {
+	Run: func(_ *cobra.Command, _ []string) {
 
 		if dryRun {
 			color.Cyan("Dry run mode")
@@ -154,6 +154,7 @@ var ConfigureCmd = &cobra.Command{
 	},
 }
 
+// SetDryRun sets the dry-run flag for config subcommands.
 func SetDryRun(value bool) {
 	dryRun = value
 }

@@ -13,7 +13,7 @@ var listCmd = &cobra.Command{
 	Use:   "list",
 	Short: "List tasks for a connector",
 	Long:  "Lists tasks for a selected connector (or --connector).",
-	Run: func(cmd *cobra.Command, args []string) {
+	Run: func(cmd *cobra.Command, _ []string) {
 		client, ok := util.NewKafkaConnectClient()
 		if !ok {
 			return

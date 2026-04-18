@@ -4,6 +4,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// Cmd is the root command for connector management.
 var Cmd = &cobra.Command{
 	Use:   "connector",
 	Short: "Connector management commands",

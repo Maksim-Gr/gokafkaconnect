@@ -1,3 +1,4 @@
+// Package connector provides an HTTP client for the Kafka Connect REST API.
 package connector
 
 import (
@@ -10,6 +11,7 @@ import (
 	"time"
 )
 
+// ListConnectors returns the names of all registered connectors.
 func (c *Client) ListConnectors(ctx context.Context) ([]string, error) {
 	body, status, err := c.doRequest(ctx, http.MethodGet, "/connectors", nil)
 	if err != nil {
@@ -25,6 +27,7 @@ func (c *Client) ListConnectors(ctx context.Context) ([]string, error) {
 	return connectors, nil
 }
 
+// ListConnectorStatuses returns status information for all connectors.
 func (c *Client) ListConnectorStatuses(ctx context.Context) (ConnectorsStatusResponse, error) {
 	body, status, err := c.doRequest(ctx, http.MethodGet, "/connectors?expand=status", nil)
 	if err != nil {
@@ -45,6 +48,7 @@ func (c *Client) ListConnectorStatuses(ctx context.Context) (ConnectorsStatusRes
 	return result, nil
 }
 
+// DeleteConnector removes the named connector from Kafka Connect.
 func (c *Client) DeleteConnector(ctx context.Context, name string) error {
 	body, status, err := c.doRequest(ctx, http.MethodDelete, fmt.Sprintf("/connectors/%s", name), nil)
 	if err != nil {
@@ -59,8 +63,9 @@ func (c *Client) DeleteConnector(ctx context.Context, name string) error {
 	return nil
 }
 
-func (c *Client) SubmitConnector(ctx context.Context, configJson string) (ConnectorInfo, error) {
-	body, status, err := c.doRequest(ctx, http.MethodPost, "/connectors", []byte(configJson))
+// SubmitConnector creates a new connector from a JSON config string.
+func (c *Client) SubmitConnector(ctx context.Context, configJSON string) (ConnectorInfo, error) {
+	body, status, err := c.doRequest(ctx, http.MethodPost, "/connectors", []byte(configJSON))
 	if err != nil {
 		return ConnectorInfo{}, err
 	}
@@ -74,6 +79,7 @@ func (c *Client) SubmitConnector(ctx context.Context, configJson string) (Connec
 	return info, nil
 }
 
+// GetConnectorConfig returns the raw JSON config for the named connector.
 func (c *Client) GetConnectorConfig(ctx context.Context, name string) (string, error) {
 	body, status, err := c.doRequest(
 		ctx,
@@ -90,6 +96,7 @@ func (c *Client) GetConnectorConfig(ctx context.Context, name string) (string, e
 	return string(body), nil
 }
 
+// UpdateConnectorConfig applies a new config map to the named connector.
 func (c *Client) UpdateConnectorConfig(ctx context.Context, name string, cfg map[string]string) error {
 	b, err := json.Marshal(cfg)
 	if err != nil {
@@ -105,6 +112,7 @@ func (c *Client) UpdateConnectorConfig(ctx context.Context, name string, cfg map
 	return nil
 }
 
+// GetConnectorConfigJSON returns the config for the named connector as a map.
 func (c *Client) GetConnectorConfigJSON(ctx context.Context, name string) (map[string]string, error) {
 	body, status, err := c.doRequest(
 		ctx,
@@ -126,6 +134,7 @@ func (c *Client) GetConnectorConfigJSON(ctx context.Context, name string) (map[s
 	return cfg, nil
 }
 
+// BackupConnectorConfig writes connector configs to a timestamped JSON file in outputDir.
 func BackupConnectorConfig(
 	ctx context.Context,
 	client *Client,
@@ -142,14 +151,14 @@ func BackupConnectorConfig(
 		dumpConfig[name] = cfg
 	}
 
-	if err := os.MkdirAll(outputDir, 0o755); err != nil {
+	if err := os.MkdirAll(outputDir, 0o750); err != nil {
 		return "", fmt.Errorf("failed to create directory: %w", err)
 	}
 
 	timestamp := time.Now().Format("20060102_150405")
 	outputFile := filepath.Join(outputDir, fmt.Sprintf("config_%s.json", timestamp))
 
-	file, err := os.Create(outputFile)
+	file, err := os.Create(outputFile) //nolint:gosec
 	if err != nil {
 		return "", fmt.Errorf("failed to create file: %w", err)
 	}

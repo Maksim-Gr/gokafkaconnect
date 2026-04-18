@@ -1,3 +1,4 @@
+// Package tests contains integration tests for the Kafka Connect client.
 package tests
 
 import (

@@ -1,3 +1,4 @@
+// Package templates provides default configurations for predefined Kafka connectors.
 package templates
 
 import "maps"
@@ -16,6 +17,7 @@ var defaultDebeziumPostgresConfig = map[string]string{
 	"topic.prefix":         "",
 }
 
+// GetDebeziumPostgresConnectorTemplate returns a copy of the default Debezium PostgreSQL connector config.
 func GetDebeziumPostgresConnectorTemplate() map[string]string {
 	configCopy := make(map[string]string)
 	maps.Copy(configCopy, defaultDebeziumPostgresConfig)

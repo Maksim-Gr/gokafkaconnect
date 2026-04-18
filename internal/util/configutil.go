@@ -1,3 +1,4 @@
+// Package util provides shared configuration loading and helper utilities.
 package util
 
 import (
@@ -15,13 +16,14 @@ import (
 
 // KeysFromMap extracts and returns a slice of keys from the given map.
 func KeysFromMap(m map[string]string) []string {
-	var keys []string
+	keys := make([]string, 0, len(m))
 	for key := range m {
 		keys = append(keys, key)
 	}
 	return keys
 }
 
+// ToPrettyJSON marshals v to an indented JSON string.
 func ToPrettyJSON(v interface{}) (string, error) {
 	b, err := json.MarshalIndent(v, "", "  ")
 	if err != nil {
@@ -30,6 +32,7 @@ func ToPrettyJSON(v interface{}) (string, error) {
 	return string(b), nil
 }
 
+// GetConfigPath returns the path to the gokafkaconnect config file.
 func GetConfigPath() (string, error) {
 	home, err := os.UserHomeDir()
 	if err != nil {
@@ -38,6 +41,7 @@ func GetConfigPath() (string, error) {
 	return filepath.Join(home, ".config", "gokafkaconnect", "config.yaml"), nil
 }
 
+// ValidateURL returns an error if input is not a valid http/https URL.
 func ValidateURL(input string) error {
 	if input == "" {
 		return errors.New("URL cannot be empty")
@@ -90,6 +94,7 @@ func SaveConfig(cfg RestAPIConfig, configPath string) error {
 	return os.WriteFile(configPath, data, 0o600)
 }
 
+// LoadConfig reads and returns the config from the default config path.
 func LoadConfig() (RestAPIConfig, error) {
 	var cfg RestAPIConfig
 	configPath, err := GetConfigPath()
@@ -97,7 +102,7 @@ func LoadConfig() (RestAPIConfig, error) {
 		return cfg, err
 	}
 
-	data, err := os.ReadFile(configPath)
+	data, err := os.ReadFile(configPath) //nolint:gosec
 	if err != nil {
 		return cfg, err
 	}
@@ -105,6 +110,7 @@ func LoadConfig() (RestAPIConfig, error) {
 	return cfg, err
 }
 
+// IsSurveyInterrupt reports whether err is a survey terminal interrupt (Ctrl+C).
 func IsSurveyInterrupt(err error) bool {
 	return errors.Is(err, terminal.InterruptErr)
 }

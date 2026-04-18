@@ -1,3 +1,4 @@
+// Package cmd contains the root command and CLI entry point.
 package cmd
 
 import (
@@ -13,6 +14,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// DryRun is the global dry-run flag shared across subcommands.
 var DryRun bool
 
 // RootCmd represents the base command when called without any subcommands.

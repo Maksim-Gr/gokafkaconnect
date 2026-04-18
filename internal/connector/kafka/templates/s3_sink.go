@@ -15,6 +15,7 @@ var defaultS3SinkConfig = map[string]string{
 	"topics.dir":      "topics",
 }
 
+// GetS3SinkConnectorTemplate returns a copy of the default S3 Sink connector config.
 func GetS3SinkConnectorTemplate() map[string]string {
 	configCopy := make(map[string]string)
 	maps.Copy(configCopy, defaultS3SinkConfig)

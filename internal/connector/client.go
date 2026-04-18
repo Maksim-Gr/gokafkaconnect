@@ -9,6 +9,7 @@ import (
 	"time"
 )
 
+// Client is an HTTP client for the Kafka Connect REST API.
 type Client struct {
 	baseURL  string
 	username string
@@ -16,6 +17,7 @@ type Client struct {
 	http     *http.Client
 }
 
+// NewClient creates a Kafka Connect client for the given base URL.
 func NewClient(kafkaConnectURL string) *Client {
 	return &Client{
 		baseURL: strings.TrimRight(kafkaConnectURL, "/"),
@@ -25,6 +27,7 @@ func NewClient(kafkaConnectURL string) *Client {
 	}
 }
 
+// SetBasicAuth configures HTTP Basic Auth credentials for all requests.
 func (c *Client) SetBasicAuth(username, password string) {
 	c.username = username
 	c.password = password

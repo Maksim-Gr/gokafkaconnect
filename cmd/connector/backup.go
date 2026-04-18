@@ -1,3 +1,4 @@
+// Package connector provides CLI commands for managing Kafka Connect connectors.
 package connector
 
 import (
@@ -10,11 +11,12 @@ import (
 
 var backupDir string
 
+// BackupCmd backs up connector configs from the Kafka Connect API.
 var BackupCmd = &cobra.Command{
 	Use:   "backup",
 	Short: "Backup connectors config from Kafka Connect API",
 	Long:  `Backup connectors config from Kafka Connect API and save to file for future usage `,
-	Run: func(cmd *cobra.Command, args []string) {
+	Run: func(cmd *cobra.Command, _ []string) {
 		cfg, err := util.LoadConfig()
 		if err != nil {
 			color.Red("Failed to load config: %v\n", err)

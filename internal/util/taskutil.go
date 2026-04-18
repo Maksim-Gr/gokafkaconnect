@@ -109,6 +109,7 @@ func ResolveTaskID(ctx context.Context, client *connector.Client, connectorName 
 	return id, true
 }
 
+// FormatTaskRef returns a human-readable "connector task N" string.
 func FormatTaskRef(connectorName string, taskID int) string {
 	return fmt.Sprintf("%s task %d", connectorName, taskID)
 }

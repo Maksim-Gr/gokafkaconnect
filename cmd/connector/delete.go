@@ -14,7 +14,7 @@ var DeleteCmd = &cobra.Command{
 	Use:   "delete",
 	Short: "delete connector",
 	Long:  `Delete connector from Kafka Connect API`,
-	Run: func(cmd *cobra.Command, args []string) {
+	Run: func(cmd *cobra.Command, _ []string) {
 		cfg, err := util.LoadConfig()
 		if err != nil {
 			color.Red("Failed to load config file: %v\n", err)

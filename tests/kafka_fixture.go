@@ -42,11 +42,13 @@ func WaitForKafkaConnectStartUp(t *testing.T, baseURL string, timeout time.Durat
 	t.Fatalf("Kafka Connect container is not ready within %s timeout", timeout)
 }
 
+// KafkaConnectTestFixture holds a running Kafka Connect container and its URL.
 type KafkaConnectTestFixture struct {
 	Container testcontainers.Container
 	URL       string
 }
 
+// KafkaConnectFixture starts a full Kafka + Kafka Connect stack and returns a test fixture.
 func KafkaConnectFixture(t *testing.T) *KafkaConnectTestFixture {
 	t.Helper()
 	ctx := context.Background()
