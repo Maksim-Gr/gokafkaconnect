@@ -14,6 +14,7 @@ var defaultJDBCSourceConfig = map[string]string{
 	"poll.interval.ms":         "5000",
 }
 
+// GetJDBCSourceConnectorTemplate returns a copy of the default JDBC Source connector config.
 func GetJDBCSourceConnectorTemplate() map[string]string {
 	configCopy := make(map[string]string)
 	maps.Copy(configCopy, defaultJDBCSourceConfig)
@@ -41,6 +42,7 @@ var defaultJDBCSinkConfig = map[string]string{
 	"insert.mode":         "insert",
 }
 
+// GetJDBCSinkConnectorTemplate returns a copy of the default JDBC Sink connector config.
 func GetJDBCSinkConnectorTemplate() map[string]string {
 	configCopy := make(map[string]string)
 	maps.Copy(configCopy, defaultJDBCSinkConfig)

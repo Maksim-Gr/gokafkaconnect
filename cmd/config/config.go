@@ -1,9 +1,11 @@
+// Package config provides CLI commands for managing gokafkaconnect configuration.
 package config
 
 import (
 	"github.com/spf13/cobra"
 )
 
+// Cmd is the root command for configuration management.
 var Cmd = &cobra.Command{
 	Use:   "config",
 	Short: "Configuration management commands",

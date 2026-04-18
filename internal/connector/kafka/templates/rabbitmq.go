@@ -18,6 +18,7 @@ var defaultRabbitMQConfig = map[string]string{
 	"rabbitmq.automatic.recovery.enabled":   "true",
 }
 
+// GetRabbitMQConnectorTemplate returns a copy of the default RabbitMQ connector config.
 func GetRabbitMQConnectorTemplate() map[string]string {
 	configCopy := make(map[string]string)
 	maps.Copy(configCopy, defaultRabbitMQConfig)

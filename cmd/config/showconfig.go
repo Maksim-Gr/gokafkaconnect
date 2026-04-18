@@ -15,7 +15,7 @@ var ShowConfigCmd = &cobra.Command{
 	Use:   "show",
 	Short: "Display API endpoint",
 	Long:  `Display Kafka Connect API endpoint.`,
-	Run: func(cmd *cobra.Command, args []string) {
+	Run: func(_ *cobra.Command, _ []string) {
 		cfg, err := util.LoadConfig()
 		if err != nil {
 			color.Red("Failed to load config: %v\n", err)

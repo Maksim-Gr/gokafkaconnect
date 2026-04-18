@@ -1,3 +1,4 @@
+// Package task provides CLI commands for managing Kafka Connect tasks.
 package task
 
 import (
@@ -12,7 +13,7 @@ var getCmd = &cobra.Command{
 	Use:   "get",
 	Short: "Get task status",
 	Long:  "Fetches status for a single task (select interactively or use --connector and --id).",
-	Run: func(cmd *cobra.Command, args []string) {
+	Run: func(cmd *cobra.Command, _ []string) {
 		client, ok := util.NewKafkaConnectClient()
 		if !ok {
 			return

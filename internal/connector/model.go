@@ -1,6 +1,8 @@
 package connector
 
 // ConnectorState represents the state of a connector instance.
+//
+//nolint:revive
 type ConnectorState struct {
 	State    string `json:"state"`
 	WorkerID string `json:"worker_id"`
@@ -22,6 +24,8 @@ type Status struct {
 }
 
 // ConnectorInfo is the response from POST /connectors and GET /connectors/{name}.
+//
+//nolint:revive
 type ConnectorInfo struct {
 	Name   string            `json:"name"`
 	Config map[string]string `json:"config"`

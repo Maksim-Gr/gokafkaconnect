@@ -11,11 +11,12 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// UpdateCmd interactively updates an existing connector's configuration.
 var UpdateCmd = &cobra.Command{
 	Use:   "update",
 	Short: "Update an existing connector configuration",
 	Long:  `Fetch a connector's live config and edit fields interactively, then apply the changes.`,
-	Run: func(cmd *cobra.Command, args []string) {
+	Run: func(cmd *cobra.Command, _ []string) {
 		cfg, err := util.LoadConfig()
 		if err != nil {
 			color.Red("Failed to load config: %v\n", err)

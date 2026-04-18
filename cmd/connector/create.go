@@ -31,7 +31,7 @@ var CreateCmd = &cobra.Command{
 	Use:   "create",
 	Short: "Create a connector from predefined configuration",
 	Long:  `Browse predefined connector.`,
-	Run: func(cmd *cobra.Command, args []string) {
+	Run: func(_ *cobra.Command, _ []string) {
 		if connectorJSONPath != "" {
 			submitConnectorFromFile(connectorJSONPath)
 			return
@@ -69,7 +69,7 @@ func init() {
 }
 
 func submitConnectorFromFile(path string) {
-	b, err := os.ReadFile(path)
+	b, err := os.ReadFile(path) //nolint:gosec
 	if err != nil {
 		color.Red("Failed to read file %s: %v\n", path, err)
 		return
@@ -103,7 +103,7 @@ func submitConnectorFromFile(path string) {
 func configureConnector(name string, connectorConfig map[string]string, required []string, passwordField string) {
 	color.Yellow("\n  Starting configuration for %s...\n", name)
 
-	var questions []*survey.Question
+	questions := make([]*survey.Question, 0, len(required))
 	for _, field := range required {
 		var prompt survey.Prompt
 		if field == passwordField {
