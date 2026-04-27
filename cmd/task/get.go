@@ -3,6 +3,7 @@ package task
 
 import (
 	"fmt"
+
 	"gokafkaconnect/internal/util"
 
 	"github.com/fatih/color"
@@ -44,7 +45,7 @@ var getCmd = &cobra.Command{
 		color.Cyan("Task status:")
 		fmt.Printf("\tConnector: %s\n", name)
 		fmt.Printf("\tTask ID:   %d\n", status.ID)
-		fmt.Printf("\tState:     %s\n", status.State)
+		fmt.Printf("\tState:     %s\n", util.ColorState(status.State))
 		fmt.Printf("\tWorker:    %s\n", status.WorkerID)
 		if status.Trace != "" {
 			color.Yellow("\tTrace:\n%s\n", status.Trace)

@@ -52,6 +52,12 @@ var UpdateCmd = &cobra.Command{
 			return
 		}
 
+		// Snapshot the original config for diff display later.
+		original := make(map[string]string, len(connectorConfig))
+		for k, v := range connectorConfig {
+			original[k] = v
+		}
+
 		for {
 			pretty, err := util.ToPrettyJSON(connectorConfig)
 			if err != nil {
@@ -98,13 +104,30 @@ var UpdateCmd = &cobra.Command{
 			}
 		}
 
-		pretty, err := util.ToPrettyJSON(connectorConfig)
-		if err != nil {
-			color.Red("Failed to format config: %v\n", err)
+		// Compute and display changed fields.
+		var changedKeys []string
+		for k, newV := range connectorConfig {
+			if oldV, exists := original[k]; exists && oldV != newV {
+				changedKeys = append(changedKeys, k)
+			}
+		}
+
+		if len(changedKeys) == 0 {
+			color.Yellow("No changes made\n")
 			return
 		}
-		color.Cyan("\nFinal config:\n")
-		fmt.Println(pretty)
+
+		sort.Strings(changedKeys)
+		maxKeyLen := 0
+		for _, k := range changedKeys {
+			if len(k) > maxKeyLen {
+				maxKeyLen = len(k)
+			}
+		}
+		color.Cyan("\nChanges:")
+		for _, k := range changedKeys {
+			fmt.Printf("  %-*s  %s  →  %s\n", maxKeyLen, k, original[k], connectorConfig[k])
+		}
 
 		var confirm bool
 		if err := survey.AskOne(&survey.Confirm{

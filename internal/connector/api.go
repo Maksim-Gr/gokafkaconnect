@@ -48,6 +48,22 @@ func (c *Client) ListConnectorStatuses(ctx context.Context) (ConnectorsStatusRes
 	return result, nil
 }
 
+// GetConnectorStatus returns the status of a single connector.
+func (c *Client) GetConnectorStatus(ctx context.Context, name string) (Status, error) {
+	body, status, err := c.doRequest(ctx, http.MethodGet, fmt.Sprintf("/connectors/%s/status", name), nil)
+	if err != nil {
+		return Status{}, err
+	}
+	if !isSuccess(status) {
+		return Status{}, fmt.Errorf("failed to get status for %s: %s", name, string(body))
+	}
+	var s Status
+	if err := json.Unmarshal(body, &s); err != nil {
+		return Status{}, err
+	}
+	return s, nil
+}
+
 // DeleteConnector removes the named connector from Kafka Connect.
 func (c *Client) DeleteConnector(ctx context.Context, name string) error {
 	body, status, err := c.doRequest(ctx, http.MethodDelete, fmt.Sprintf("/connectors/%s", name), nil)
