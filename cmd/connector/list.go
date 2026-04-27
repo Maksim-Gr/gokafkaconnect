@@ -65,7 +65,7 @@ var ListCmd = &cobra.Command{
 			const cancelOpt = "← Cancel"
 			prompt := &survey.Select{
 				Message: "Show connector config:",
-				Options: append([]string{cancelOpt}, connectors...),
+				Options: append(connectors, cancelOpt),
 			}
 			if err := survey.AskOne(prompt, &selected); err != nil || selected == cancelOpt {
 				color.Yellow("Canceled\n")

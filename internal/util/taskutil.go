@@ -45,7 +45,7 @@ func ResolveConnectorName(ctx context.Context, client *connector.Client, flagVal
 
 	const cancelOpt = "← Cancel"
 	var name string
-	prompt := &survey.Select{Message: "Pick connector:", Options: append([]string{cancelOpt}, connectors...)}
+	prompt := &survey.Select{Message: "Pick connector:", Options: append(connectors, cancelOpt)}
 	if err := survey.AskOne(prompt, &name); err != nil || name == cancelOpt {
 		color.Yellow("Canceled\n")
 		return "", false
@@ -92,10 +92,10 @@ func ResolveTaskID(ctx context.Context, client *connector.Client, connectorName 
 
 	const cancelOpt = "← Cancel"
 	options := make([]string, 0, len(tasks)+1)
-	options = append(options, cancelOpt)
 	for _, t := range tasks {
 		options = append(options, strconv.Itoa(t.Task))
 	}
+	options = append(options, cancelOpt)
 
 	var selected string
 	prompt := &survey.Select{Message: "Pick task id:", Options: options}
