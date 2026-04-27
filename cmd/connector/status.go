@@ -60,6 +60,7 @@ var HealthCheckCmd = &cobra.Command{
 						}
 						if len(lines) > 3 {
 							color.Yellow("  %-*s      ...\n", maxLen, "")
+							fmt.Printf("  %-*s      run: gk task get --connector %s --id %d\n", maxLen, "", name, t.ID)
 						}
 					}
 				}
