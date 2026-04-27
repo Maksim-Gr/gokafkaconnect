@@ -1,10 +1,13 @@
 package config
 
 import (
+	"context"
 	"errors"
+	"fmt"
 	"os"
 	"strings"
 
+	"gokafkaconnect/internal/connector"
 	"gokafkaconnect/internal/util"
 
 	"github.com/AlecAivazis/survey/v2"
@@ -150,6 +153,26 @@ var ConfigureCmd = &cobra.Command{
 			color.Green("Authentication enabled for user: %s", inputUser)
 		} else {
 			color.Green("Authentication disabled")
+		}
+
+		var testConn bool
+		testPrompt := &survey.Confirm{
+			Message: fmt.Sprintf("Test connection to %s?", inputURL),
+			Default: true,
+		}
+		if err := survey.AskOne(testPrompt, &testConn); err == nil && testConn {
+			stop := util.StartSpinner("Testing connection...")
+			testClient := connector.NewClient(inputURL)
+			if inputUser != "" {
+				testClient.SetBasicAuth(inputUser, inputPass)
+			}
+			list, err := testClient.ListConnectors(context.Background())
+			stop()
+			if err != nil {
+				color.Red("Connection failed: %v\n", err)
+			} else {
+				color.Green("Connection OK — %d connector(s) found\n", len(list))
+			}
 		}
 	},
 }

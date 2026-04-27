@@ -26,6 +26,10 @@ var ShowConfigCmd = &cobra.Command{
 			cfg.KafkaConnect.Password = "********"
 		}
 
+		if configPath, err := util.GetConfigPath(); err == nil {
+			color.Cyan("Config file: %s\n", configPath)
+		}
+
 		color.Cyan("Current Configuration:")
 		data, err := json.MarshalIndent(cfg, "", "  ")
 		if err != nil {

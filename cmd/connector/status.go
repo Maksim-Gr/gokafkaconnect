@@ -2,23 +2,14 @@ package connector
 
 import (
 	"fmt"
+	"strings"
+
 	"gokafkaconnect/internal/connector"
 	"gokafkaconnect/internal/util"
 
 	"github.com/fatih/color"
 	"github.com/spf13/cobra"
 )
-
-func stateColor(state string) string {
-	switch state {
-	case "RUNNING":
-		return color.GreenString(state)
-	case "FAILED":
-		return color.RedString(state)
-	default:
-		return color.YellowString(state)
-	}
-}
 
 // HealthCheckCmd shows connector and task statuses.
 var HealthCheckCmd = &cobra.Command{
@@ -35,7 +26,10 @@ var HealthCheckCmd = &cobra.Command{
 		if cfg.KafkaConnect.Username != "" {
 			client.SetBasicAuth(cfg.KafkaConnect.Username, cfg.KafkaConnect.Password)
 		}
+
+		stop := util.StartSpinner("Fetching connector statuses...")
 		connectorStatuses, err := client.ListConnectorStatuses(cmd.Context())
+		stop()
 		if err != nil {
 			color.Red("Failed to list connector statuses: %v\n", err)
 			return
@@ -50,9 +44,25 @@ var HealthCheckCmd = &cobra.Command{
 
 		color.Cyan("Connector Statuses:")
 		for name, status := range connectorStatuses {
-			fmt.Printf("  %-*s  %s\n", maxLen, name, stateColor(status.Connector.State))
+			fmt.Printf("  %-*s  %s\n", maxLen, name, util.ColorState(status.Connector.State))
 			for _, t := range status.Tasks {
-				fmt.Printf("  %-*s    Task %d: %s\n", maxLen, "", t.ID, stateColor(t.State))
+				fmt.Printf("  %-*s    Task %d: %s\n", maxLen, "", t.ID, util.ColorState(t.State))
+				if t.State == "FAILED" {
+					ts, err := client.GetConnectorTaskStatus(cmd.Context(), name, t.ID)
+					if err == nil && ts.Trace != "" {
+						lines := strings.Split(strings.TrimRight(ts.Trace, "\n"), "\n")
+						shown := lines
+						if len(lines) > 3 {
+							shown = lines[:3]
+						}
+						for _, line := range shown {
+							color.Yellow("  %-*s      %s\n", maxLen, "", line)
+						}
+						if len(lines) > 3 {
+							color.Yellow("  %-*s      ...\n", maxLen, "")
+						}
+					}
+				}
 			}
 		}
 	},

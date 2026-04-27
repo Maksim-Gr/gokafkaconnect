@@ -29,7 +29,11 @@ var listCmd = &cobra.Command{
 			return
 		}
 
+		stop := util.StartSpinner("Fetching tasks...")
 		tasks, err := client.ListConnectorTasks(cmd.Context(), name)
+		connStatus, _ := client.GetConnectorStatus(cmd.Context(), name)
+		stop()
+
 		if err != nil {
 			color.Red("Failed to list tasks for %s: %v\n", name, err)
 			return
@@ -39,9 +43,18 @@ var listCmd = &cobra.Command{
 			return
 		}
 
+		taskStates := make(map[int]string, len(connStatus.Tasks))
+		for _, ts := range connStatus.Tasks {
+			taskStates[ts.ID] = ts.State
+		}
+
 		color.Cyan("Tasks for %s:", name)
 		for _, t := range tasks {
-			fmt.Printf("\t%d\n", t.Task)
+			badge := ""
+			if state, ok := taskStates[t.Task]; ok {
+				badge = "  " + util.ColorState(state)
+			}
+			fmt.Printf("  Task %d%s\n", t.Task, badge)
 		}
 	},
 }
