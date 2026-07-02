@@ -41,6 +41,31 @@ func TestResolveConnectorName_ListError(t *testing.T) {
 	assert.Contains(t, err.Error(), "failed to list connectors")
 }
 
+func TestResolveConnectorNames_ArgsPassthrough(t *testing.T) {
+	names, err := ResolveConnectorNames(context.Background(), nil, []string{"a", "b"}, false)
+	require.NoError(t, err)
+	assert.Equal(t, []string{"a", "b"}, names)
+}
+
+func TestResolveConnectorNames_ArgsAndAllConflict(t *testing.T) {
+	_, err := ResolveConnectorNames(context.Background(), nil, []string{"a"}, true)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "cannot combine --all with connector names")
+}
+
+func TestResolveConnectorNames_AllSorted(t *testing.T) {
+	client := newListClient(t, http.StatusOK, `["zulu","alpha"]`)
+	names, err := ResolveConnectorNames(context.Background(), client, nil, true)
+	require.NoError(t, err)
+	assert.Equal(t, []string{"alpha", "zulu"}, names)
+}
+
+func TestResolveConnectorNames_AllEmpty(t *testing.T) {
+	client := newListClient(t, http.StatusOK, "[]")
+	_, err := ResolveConnectorNames(context.Background(), client, nil, true)
+	assert.ErrorIs(t, err, ErrNothingToDo)
+}
+
 func TestResolveTaskID_FlagValueFound(t *testing.T) {
 	client := newListClient(t, http.StatusOK, `[{"id":{"connector":"alpha","task":0}},{"id":{"connector":"alpha","task":1}}]`)
 	id, err := ResolveTaskID(context.Background(), client, "alpha", 1, false)

@@ -8,13 +8,23 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// ResumeCmd resumes a connector.
+// ResumeCmd resumes one or more connectors.
 var ResumeCmd = &cobra.Command{
-	Use:   "resume [name]",
-	Short: "Resume a connector",
-	Long:  "Resumes a paused Kafka Connect connector and its tasks (select interactively or pass the connector name).",
-	Args:  cobra.MaximumNArgs(1),
-	RunE: lifecycleRunE("resume", func(ctx context.Context, client *connector.Client, name string) error {
-		return client.ResumeConnector(ctx, name)
+	Use:   "resume [name...]",
+	Short: "Resume connectors",
+	Long:  "Resumes paused Kafka Connect connectors and their tasks (multi-select interactively, pass connector names, or use --all).",
+	Args:  cobra.ArbitraryArgs,
+	RunE: lifecycleRunE(lifecycleSpec{
+		verb:           "resume",
+		successFmt:     "Resume requested for %s\n",
+		confirmDefault: true,
+		op: func(ctx context.Context, client *connector.Client, name string) error {
+			return client.ResumeConnector(ctx, name)
+		},
 	}),
+}
+
+func init() {
+	ResumeCmd.Flags().Bool("all", false, "Resume all connectors")
+	ResumeCmd.Flags().BoolP("yes", "y", false, "Skip the confirmation prompt for multiple connectors")
 }

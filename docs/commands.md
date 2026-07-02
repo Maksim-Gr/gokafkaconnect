@@ -42,11 +42,11 @@ kkon connector <subcommand>
 Subcommands:
 - `create` Create a connector from predefined templates or from a JSON file.
 - `update` Update an existing connector's configuration (shows a before→after diff).
-- `delete [name]` Delete a connector (interactive, or pass a name).
+- `delete [name...]` Delete one or more connectors (multi-select, names, or `--all`).
 - `list` List connectors and interactively show one config.
-- `pause [name]` Pause a connector and its tasks.
-- `resume [name]` Resume a paused connector.
-- `restart [name]` Restart a connector (and, by default, its tasks).
+- `pause [name...]` Pause one or more connectors and their tasks.
+- `resume [name...]` Resume one or more paused connectors.
+- `restart [name...]` Restart one or more connectors (and, by default, their tasks).
 - `health-check` Print connector status summary.
 - `backup` Back up all connector configs to JSON files.
 
@@ -61,8 +61,9 @@ Flags:
 Notes:
 - `create` without `--file` opens an interactive prompt with predefined templates.
 - `list` prompts you to select a connector and then prints its config.
-- `delete`, `pause`, `resume`, and `restart` take an optional connector name — omit it to select interactively.
-- `delete` and `restart` accept `--yes, -y` to skip the confirmation prompt (useful in scripts/CI).
+- `delete`, `pause`, `resume`, and `restart` take optional connector names — omit them to multi-select interactively, or pass `--all` to target every connector.
+- All four accept `--yes, -y` to skip the confirmation prompt (useful in scripts/CI). `pause` and `resume` only confirm when targeting more than one connector.
+- Operating on multiple connectors continues past individual failures, prints a per-connector ✓/✗ summary, and exits `1` if any operation failed.
 
 Examples:
 ```bash
@@ -81,6 +82,10 @@ kkon connector pause my-connector
 kkon connector resume my-connector
 
 kkon connector restart my-connector --only-failed
+
+kkon connector pause --all --yes
+
+kkon connector restart connector-a connector-b --yes
 
 kkon connector health-check
 

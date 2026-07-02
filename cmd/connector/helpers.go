@@ -62,11 +62,28 @@ func printActionJSON(name, action string) {
 	fmt.Println(string(b))
 }
 
-// lifecycleRunE returns a RunE shared by pause and resume, which differ only
-// in the API call and the verb used in messages.
-func lifecycleRunE(verb string, op func(ctx context.Context, client *connector.Client, name string) error) func(cmd *cobra.Command, args []string) error {
+// lifecycleSpec describes a connector lifecycle command (pause, resume,
+// restart, delete) run through lifecycleRunE.
+type lifecycleSpec struct {
+	verb           string // e.g. "pause"; also used in messages and json output
+	successFmt     string // printed with the connector name for a single target
+	confirmSingle  bool   // ask for confirmation even for a single connector
+	confirmDefault bool   // default answer of the confirmation prompt
+	dryRunNote     func() string
+	op             func(ctx context.Context, client *connector.Client, name string) error
+}
+
+// lifecycleRunE returns a RunE shared by the lifecycle commands. Targets come
+// from positional args, --all, or an interactive multi-select; a single target
+// keeps the original one-connector behavior, while multiple targets are
+// processed via runBulk with a per-connector summary.
+func lifecycleRunE(spec lifecycleSpec) func(cmd *cobra.Command, args []string) error {
 	return func(cmd *cobra.Command, args []string) error {
-		if util.IsJSONOutput(cmd) && argOrEmpty(args) == "" {
+		jsonMode := util.IsJSONOutput(cmd)
+		all, _ := cmd.Flags().GetBool("all")
+		yes, _ := cmd.Flags().GetBool("yes")
+
+		if jsonMode && len(args) == 0 && !all {
 			return errNonInteractiveJSON
 		}
 
@@ -75,26 +92,109 @@ func lifecycleRunE(verb string, op func(ctx context.Context, client *connector.C
 			return err
 		}
 
-		name, err := util.ResolveConnectorName(cmd.Context(), client, argOrEmpty(args))
+		names, err := util.ResolveConnectorNames(cmd.Context(), client, args, all)
 		if err != nil {
 			return err
 		}
 
 		if util.IsDryRun(cmd) {
-			color.Yellow("[dry-run] Would %s connector %s\n", verb, name)
+			note := ""
+			if spec.dryRunNote != nil {
+				note = spec.dryRunNote()
+			}
+			if len(names) == 1 {
+				color.Yellow("[dry-run] Would %s connector %s%s\n", spec.verb, names[0], note)
+				return nil
+			}
+			color.Yellow("[dry-run] Would %s %d connector(s)%s:\n", spec.verb, len(names), note)
+			for _, n := range names {
+				color.Yellow("  - %s\n", n)
+			}
 			return nil
 		}
 
-		if err := op(cmd.Context(), client, name); err != nil {
-			return fmt.Errorf("failed to %s %s: %w", verb, name, err)
+		if !yes && (spec.confirmSingle || len(names) > 1) {
+			if jsonMode {
+				return errNonInteractiveJSON
+			}
+			titleVerb := strings.ToUpper(spec.verb[:1]) + spec.verb[1:]
+			message := fmt.Sprintf("%s connector %s?", titleVerb, names[0])
+			if len(names) > 1 {
+				message = fmt.Sprintf("%s %d connectors (%s)?", titleVerb, len(names), strings.Join(names, ", "))
+			}
+			var confirm bool
+			if err := survey.AskOne(&survey.Confirm{
+				Message: message,
+				Default: spec.confirmDefault,
+			}, &confirm); err != nil || !confirm {
+				return util.ErrCanceled
+			}
 		}
-		if util.IsJSONOutput(cmd) {
-			printActionJSON(name, verb)
+
+		if len(names) == 1 {
+			name := names[0]
+			if err := spec.op(cmd.Context(), client, name); err != nil {
+				return fmt.Errorf("failed to %s %s: %w", spec.verb, name, err)
+			}
+			if jsonMode {
+				printActionJSON(name, spec.verb)
+				return nil
+			}
+			color.Green(spec.successFmt, name)
 			return nil
 		}
-		color.Green("%s requested for %s\n", strings.ToUpper(verb[:1])+verb[1:], name)
-		return nil
+
+		return runBulk(cmd.Context(), jsonMode, spec.verb, names, func(ctx context.Context, name string) error {
+			return spec.op(ctx, client, name)
+		})
 	}
+}
+
+// runBulk applies op to each name, continuing past individual failures. It
+// prints a per-connector ✓/✗ summary (or a JSON results array in json mode)
+// and returns an error when any operation failed.
+func runBulk(ctx context.Context, jsonMode bool, verb string, names []string, op func(ctx context.Context, name string) error) error {
+	type bulkResult struct {
+		Name   string `json:"name"`
+		Action string `json:"action"`
+		Error  string `json:"error,omitempty"`
+	}
+
+	results := make([]bulkResult, 0, len(names))
+	failed := 0
+	stop := util.StartSpinner(fmt.Sprintf("Running %s on %d connector(s)...", verb, len(names)))
+	for _, name := range names {
+		r := bulkResult{Name: name, Action: verb}
+		if err := ctx.Err(); err != nil {
+			r.Error = err.Error()
+		} else if err := op(ctx, name); err != nil {
+			r.Error = err.Error()
+		}
+		if r.Error != "" {
+			failed++
+		}
+		results = append(results, r)
+	}
+	stop()
+
+	if jsonMode {
+		b, _ := json.MarshalIndent(results, "", "  ")
+		fmt.Println(string(b))
+	} else {
+		for _, r := range results {
+			if r.Error != "" {
+				color.Red("  ✗ %s: %s\n", r.Name, r.Error)
+			} else {
+				color.Green("  ✓ %s\n", r.Name)
+			}
+		}
+		fmt.Printf("%d ok, %d failed\n", len(results)-failed, failed)
+	}
+
+	if failed > 0 {
+		return fmt.Errorf("failed to %s %d of %d connector(s)", verb, failed, len(names))
+	}
+	return nil
 }
 
 // validateConfigOrConfirm runs server-side validation on a connector config.
