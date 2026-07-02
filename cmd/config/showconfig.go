@@ -15,11 +15,10 @@ var ShowConfigCmd = &cobra.Command{
 	Use:   "show",
 	Short: "Show current configuration",
 	Long:  `Display Kafka Connect API endpoint.`,
-	Run: func(_ *cobra.Command, _ []string) {
+	RunE: func(_ *cobra.Command, _ []string) error {
 		cfg, err := util.LoadConfig()
 		if err != nil {
-			color.Red("Failed to load config: %v\n", err)
-			return
+			return fmt.Errorf("failed to load config: %w", err)
 		}
 
 		if cfg.KafkaConnect.Password != "" {
@@ -33,9 +32,9 @@ var ShowConfigCmd = &cobra.Command{
 		color.Cyan("Current Configuration:")
 		data, err := json.MarshalIndent(cfg, "", "  ")
 		if err != nil {
-			color.Red("Failed to format config: %v\n", err)
-			return
+			return fmt.Errorf("failed to format config: %w", err)
 		}
 		fmt.Printf("\n%s\n\n", string(data))
+		return nil
 	},
 }

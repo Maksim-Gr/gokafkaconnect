@@ -1,6 +1,7 @@
 package task
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/Maksim-Gr/kkon/internal/util"
@@ -14,26 +15,30 @@ var restartCmd = &cobra.Command{
 	Use:   "restart",
 	Short: "Restart a task",
 	Long:  "Restarts a single Kafka Connect task (select interactively or use --connector and --id).",
-	Run: func(cmd *cobra.Command, _ []string) {
-		client, ok := util.NewKafkaConnectClient()
-		if !ok {
-			return
+	RunE: func(cmd *cobra.Command, _ []string) error {
+		if util.IsJSONOutput(cmd) {
+			return errors.New("--output json is not supported for task restart (interactive command)")
 		}
 
-		name, ok := util.ResolveConnectorName(cmd.Context(), client, connectorName)
-		if !ok {
-			return
+		client, err := util.NewKafkaConnectClient()
+		if err != nil {
+			return err
 		}
 
-		isDryRun := dryRun != nil && *dryRun
-		id, ok := util.ResolveTaskID(cmd.Context(), client, name, taskID, isDryRun)
-		if !ok {
-			return
+		name, err := util.ResolveConnectorName(cmd.Context(), client, connectorName)
+		if err != nil {
+			return err
+		}
+
+		isDryRun := util.IsDryRun(cmd)
+		id, err := util.ResolveTaskID(cmd.Context(), client, name, taskID, isDryRun)
+		if err != nil {
+			return err
 		}
 
 		if isDryRun {
 			color.Yellow("[dry-run] Would restart %s\n", util.FormatTaskRef(name, id))
-			return
+			return nil
 		}
 
 		var confirm bool
@@ -41,21 +46,16 @@ var restartCmd = &cobra.Command{
 			Message: fmt.Sprintf("Restart %s?", util.FormatTaskRef(name, id)),
 			Default: true,
 		}
-		if err := survey.AskOne(confirmPrompt, &confirm); err != nil {
-			color.Yellow("Canceled\n")
-			return
-		}
-		if !confirm {
-			color.Yellow("Canceled\n")
-			return
+		if err := survey.AskOne(confirmPrompt, &confirm); err != nil || !confirm {
+			return util.ErrCanceled
 		}
 
 		if err := client.RestartConnectorTask(cmd.Context(), name, id); err != nil {
-			color.Red("Failed to restart %s: %v\n", util.FormatTaskRef(name, id), err)
-			return
+			return fmt.Errorf("failed to restart %s: %w", util.FormatTaskRef(name, id), err)
 		}
 
 		color.Green("Restart requested for %s\n", util.FormatTaskRef(name, id))
+		return nil
 	},
 }
 

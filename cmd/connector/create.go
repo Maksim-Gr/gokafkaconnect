@@ -1,12 +1,11 @@
 package connector
 
 import (
-	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 
-	"github.com/Maksim-Gr/kkon/internal/connector"
 	template "github.com/Maksim-Gr/kkon/internal/connector/kafka/templates"
 	"github.com/Maksim-Gr/kkon/internal/util"
 
@@ -31,10 +30,13 @@ var CreateCmd = &cobra.Command{
 	Use:   "create",
 	Short: "Create a connector from predefined configuration",
 	Long:  `Browse predefined connector.`,
-	Run: func(cmd *cobra.Command, _ []string) {
+	RunE: func(cmd *cobra.Command, _ []string) error {
 		if connectorJSONPath != "" {
-			submitConnectorFromFile(cmd.Context(), connectorJSONPath)
-			return
+			return submitConnectorFromFile(cmd, connectorJSONPath)
+		}
+
+		if util.IsJSONOutput(cmd) {
+			return errors.New("--output json requires --file (the create wizard is interactive)")
 		}
 
 		var selected string
@@ -43,24 +45,23 @@ var CreateCmd = &cobra.Command{
 			Message: "Pick a connector to work with:",
 			Options: connectors,
 		}
-		err := survey.AskOne(prompt, &selected)
-		if err != nil {
-			color.Yellow("Canceled\n")
-			return
+		if err := survey.AskOne(prompt, &selected); err != nil {
+			return util.ErrCanceled
 		}
 		color.Green("\n You selected: %s\n", selected)
 		switch selected {
 		case "RabbitMQ Connector":
-			configureConnector(cmd.Context(), "RabbitMQ Connector", template.GetRabbitMQConnectorTemplate(), template.RabbitMQRequiredFields(), "rabbitmq.password")
+			return configureConnector(cmd, "RabbitMQ Connector", template.GetRabbitMQConnectorTemplate(), template.RabbitMQRequiredFields(), "rabbitmq.password")
 		case "Debezium PostgreSQL CDC":
-			configureConnector(cmd.Context(), "Debezium PostgreSQL CDC", template.GetDebeziumPostgresConnectorTemplate(), template.DebeziumPostgresRequiredFields(), "database.password")
+			return configureConnector(cmd, "Debezium PostgreSQL CDC", template.GetDebeziumPostgresConnectorTemplate(), template.DebeziumPostgresRequiredFields(), "database.password")
 		case "JDBC Source Connector":
-			configureConnector(cmd.Context(), "JDBC Source Connector", template.GetJDBCSourceConnectorTemplate(), template.JDBCSourceRequiredFields(), "connection.password")
+			return configureConnector(cmd, "JDBC Source Connector", template.GetJDBCSourceConnectorTemplate(), template.JDBCSourceRequiredFields(), "connection.password")
 		case "JDBC Sink Connector":
-			configureConnector(cmd.Context(), "JDBC Sink Connector", template.GetJDBCSinkConnectorTemplate(), template.JDBCSinkRequiredFields(), "connection.password")
+			return configureConnector(cmd, "JDBC Sink Connector", template.GetJDBCSinkConnectorTemplate(), template.JDBCSinkRequiredFields(), "connection.password")
 		case "S3 Sink Connector":
-			configureConnector(cmd.Context(), "S3 Sink Connector", template.GetS3SinkConnectorTemplate(), template.S3SinkRequiredFields(), "")
+			return configureConnector(cmd, "S3 Sink Connector", template.GetS3SinkConnectorTemplate(), template.S3SinkRequiredFields(), "")
 		}
+		return nil
 	},
 }
 
@@ -68,44 +69,62 @@ func init() {
 	CreateCmd.Flags().StringVarP(&connectorJSONPath, "file", "f", "", "Path to connector JSON config file")
 }
 
-func submitConnectorFromFile(ctx context.Context, path string) {
+func submitConnectorFromFile(cmd *cobra.Command, path string) error {
+	ctx := cmd.Context()
+	jsonMode := util.IsJSONOutput(cmd)
+
 	b, err := os.ReadFile(path) //nolint:gosec
 	if err != nil {
-		color.Red("Failed to read file %s: %v\n", path, err)
-		return
+		return fmt.Errorf("failed to read file %s: %w", path, err)
 	}
 
 	var js json.RawMessage
 	if err := json.Unmarshal(b, &js); err != nil {
-		color.Red("Invalid JSON in %s: %v\n", path, err)
-		return
+		return fmt.Errorf("invalid JSON in %s: %w", path, err)
 	}
 
-	cfg, err := util.LoadConfig()
+	client, err := util.NewKafkaConnectClient()
 	if err != nil {
-		color.Red("Failed to load config file: %v\n", err)
-		return
+		return err
 	}
 
-	client := connector.NewClient(cfg.KafkaConnect.URL)
-	if cfg.KafkaConnect.Username != "" {
-		client.SetBasicAuth(cfg.KafkaConnect.Username, cfg.KafkaConnect.Password)
+	if configMap := configMapFromFile(b); configMap != nil {
+		if jsonMode {
+			if err := validateConfigStrict(ctx, client, configMap); err != nil {
+				return err
+			}
+		} else if !validateConfigOrConfirm(ctx, client, configMap) {
+			color.Yellow("Submission cancelled.\n")
+			return util.ErrNothingToDo
+		}
 	}
 
-	if configMap := configMapFromFile(b); !validateConfigOrConfirm(ctx, client, configMap) {
-		color.Yellow("Submission cancelled.\n")
-		return
+	if util.IsDryRun(cmd) {
+		color.Yellow("[dry-run] Would submit connector from file %s\n", path)
+		return nil
 	}
 
-	color.Green("\n Submitting connector from file: %s ...\n", path)
+	if !jsonMode {
+		color.Green("\n Submitting connector from file: %s ...\n", path)
+	}
 	if _, err := client.SubmitConnector(ctx, string(b)); err != nil {
-		color.Red("Failed to submit connector: %v\n", err)
-		return
+		return fmt.Errorf("failed to submit connector: %w", err)
+	}
+
+	if jsonMode {
+		var meta struct {
+			Name string `json:"name"`
+		}
+		_ = json.Unmarshal(b, &meta)
+		printActionJSON(meta.Name, "create")
+		return nil
 	}
 	color.Green("Connector submitted successfully!\n")
+	return nil
 }
 
-func configureConnector(ctx context.Context, name string, connectorConfig map[string]string, required []string, passwordField string) {
+func configureConnector(cmd *cobra.Command, name string, connectorConfig map[string]string, required []string, passwordField string) error {
+	ctx := cmd.Context()
 	color.Yellow("\n  Starting configuration for %s...\n", name)
 
 	questions := make([]*survey.Question, 0, len(required))
@@ -124,14 +143,11 @@ func configureConnector(ctx context.Context, name string, connectorConfig map[st
 	}
 
 	answers := make(map[string]interface{})
-	err := survey.Ask(questions, &answers)
-	if err != nil {
+	if err := survey.Ask(questions, &answers); err != nil {
 		if util.IsSurveyInterrupt(err) {
-			color.Yellow("Canceled\n")
-		} else {
-			color.Red("Failed to get input: %v\n", err)
+			return util.ErrCanceled
 		}
-		return
+		return fmt.Errorf("failed to get input: %w", err)
 	}
 
 	for key, value := range answers {
@@ -141,8 +157,7 @@ func configureConnector(ctx context.Context, name string, connectorConfig map[st
 	for {
 		finalConfig, err := util.ToPrettyJSON(connectorConfig)
 		if err != nil {
-			color.Red("Failed to format config: %v\n", err)
-			return
+			return fmt.Errorf("failed to format config: %w", err)
 		}
 		color.Cyan("\n Current %s Configuration:\n", name)
 		fmt.Println(finalConfig)
@@ -152,14 +167,11 @@ func configureConnector(ctx context.Context, name string, connectorConfig map[st
 			Message: "Do you want to change any field?",
 			Default: false,
 		}
-		err = survey.AskOne(changePrompt, &confirmChange)
-		if err != nil {
+		if err := survey.AskOne(changePrompt, &confirmChange); err != nil {
 			if util.IsSurveyInterrupt(err) {
-				color.Yellow("Canceled\n")
-			} else {
-				color.Red("Prompt failed: %v\n", err)
+				return util.ErrCanceled
 			}
-			return
+			return fmt.Errorf("prompt failed: %w", err)
 		}
 
 		if !confirmChange {
@@ -172,80 +184,73 @@ func configureConnector(ctx context.Context, name string, connectorConfig map[st
 			Message: "Which field do you want to change?",
 			Options: util.KeysFromMap(connectorConfig),
 		}
-		err = survey.AskOne(fieldPrompt, &fieldToChange)
-		if err != nil {
+		if err := survey.AskOne(fieldPrompt, &fieldToChange); err != nil {
 			if util.IsSurveyInterrupt(err) {
-				color.Yellow("Canceled\n")
-			} else {
-				color.Red("Prompt failed: %v\n", err)
+				return util.ErrCanceled
 			}
-			return
+			return fmt.Errorf("prompt failed: %w", err)
 		}
 
 		var newValue string
 		valuePrompt := &survey.Input{
 			Message: fmt.Sprintf("Enter new value for %s:", fieldToChange),
 		}
-		err = survey.AskOne(valuePrompt, &newValue)
-		if err != nil {
+		if err := survey.AskOne(valuePrompt, &newValue); err != nil {
 			if util.IsSurveyInterrupt(err) {
-				color.Yellow("Canceled\n")
-			} else {
-				color.Red("Prompt failed: %v\n", err)
+				return util.ErrCanceled
 			}
-			return
+			return fmt.Errorf("prompt failed: %w", err)
 		}
 
 		connectorConfig[fieldToChange] = newValue
 	}
 	finalConfig, err := util.ToPrettyJSON(connectorConfig)
 	if err != nil {
-		color.Red("Failed to format config: %v\n", err)
-		return
+		return fmt.Errorf("failed to format config: %w", err)
 	}
 	color.Cyan("\nFinal %s Configuration:\n", name)
 	fmt.Println(finalConfig)
+
+	client, err := util.NewKafkaConnectClient()
+	if err != nil {
+		return err
+	}
+
+	if util.IsDryRun(cmd) {
+		if !validateConfigOrConfirm(ctx, client, connectorConfig) {
+			color.Yellow("\n Submission cancelled. Exiting.\n")
+			return util.ErrNothingToDo
+		}
+		color.Yellow("[dry-run] Would submit connector %s\n", name)
+		return nil
+	}
 
 	var submitConfirm bool
 	submitPrompt := &survey.Confirm{
 		Message: "Do you want to submit this connector to Kafka Connect?",
 		Default: true,
 	}
-	err = survey.AskOne(submitPrompt, &submitConfirm)
-	if err != nil {
+	if err := survey.AskOne(submitPrompt, &submitConfirm); err != nil {
 		if util.IsSurveyInterrupt(err) {
-			color.Yellow("Canceled\n")
-		} else {
-			color.Red("Prompt failed: %v\n", err)
+			return util.ErrCanceled
 		}
-		return
+		return fmt.Errorf("prompt failed: %w", err)
 	}
 
-	if submitConfirm {
-		color.Green("\n Submitting connector...\n")
-		cfg, err := util.LoadConfig()
-
-		if err != nil {
-			color.Red("Failed to load config file: %v\n", err)
-			return
-		}
-		client := connector.NewClient(cfg.KafkaConnect.URL)
-		if cfg.KafkaConnect.Username != "" {
-			client.SetBasicAuth(cfg.KafkaConnect.Username, cfg.KafkaConnect.Password)
-		}
-
-		if !validateConfigOrConfirm(ctx, client, connectorConfig) {
-			color.Yellow("\n Submission cancelled. Exiting.\n")
-			return
-		}
-
-		_, err = client.SubmitConnector(ctx, finalConfig)
-		if err != nil {
-			color.Red("Failed to submit connector: %v\n", err)
-		} else {
-			color.Green("Connector submitted successfully!\n")
-		}
-	} else {
+	if !submitConfirm {
 		color.Yellow("\n Submission cancelled. Exiting.\n")
+		return util.ErrNothingToDo
 	}
+
+	color.Green("\n Submitting connector...\n")
+	if !validateConfigOrConfirm(ctx, client, connectorConfig) {
+		color.Yellow("\n Submission cancelled. Exiting.\n")
+		return util.ErrNothingToDo
+	}
+
+	if _, err := client.SubmitConnector(ctx, finalConfig); err != nil {
+		return fmt.Errorf("failed to submit connector: %w", err)
+	}
+	color.Green("Connector submitted successfully!\n")
+	return nil
 }

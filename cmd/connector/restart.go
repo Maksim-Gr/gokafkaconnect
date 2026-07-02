@@ -22,21 +22,25 @@ var RestartCmd = &cobra.Command{
 	Short: "Restart a connector",
 	Long:  "Restarts a Kafka Connect connector (select interactively or pass the connector name).",
 	Args:  cobra.MaximumNArgs(1),
-	Run: func(cmd *cobra.Command, args []string) {
-		client, ok := util.NewKafkaConnectClient()
-		if !ok {
-			return
+	RunE: func(cmd *cobra.Command, args []string) error {
+		if util.IsJSONOutput(cmd) && (argOrEmpty(args) == "" || !restartYes) {
+			return errNonInteractiveJSON
 		}
 
-		name, ok := util.ResolveConnectorName(cmd.Context(), client, argOrEmpty(args))
-		if !ok {
-			return
+		client, err := util.NewKafkaConnectClient()
+		if err != nil {
+			return err
 		}
 
-		if isDryRun(cmd) {
+		name, err := util.ResolveConnectorName(cmd.Context(), client, argOrEmpty(args))
+		if err != nil {
+			return err
+		}
+
+		if util.IsDryRun(cmd) {
 			color.Yellow("[dry-run] Would restart connector %s (includeTasks=%t, onlyFailed=%t)\n",
 				name, restartIncludeTasks, restartOnlyFailed)
-			return
+			return nil
 		}
 
 		if !restartYes {
@@ -46,16 +50,19 @@ var RestartCmd = &cobra.Command{
 				Default: true,
 			}
 			if err := survey.AskOne(confirmPrompt, &confirm); err != nil || !confirm {
-				color.Yellow("Canceled\n")
-				return
+				return util.ErrCanceled
 			}
 		}
 
 		if err := client.RestartConnector(cmd.Context(), name, restartIncludeTasks, restartOnlyFailed); err != nil {
-			color.Red("Failed to restart %s: %v\n", name, err)
-			return
+			return fmt.Errorf("failed to restart %s: %w", name, err)
+		}
+		if util.IsJSONOutput(cmd) {
+			printActionJSON(name, "restart")
+			return nil
 		}
 		color.Green("Restart requested for %s\n", name)
+		return nil
 	},
 }
 

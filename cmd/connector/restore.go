@@ -26,33 +26,37 @@ var RestoreCmd = &cobra.Command{
 	Short: "Restore connectors from a backup file",
 	Long:  "Re-create connectors from a backup JSON file produced by 'kkon connector backup'.",
 	Args:  cobra.MaximumNArgs(1),
-	Run: func(cmd *cobra.Command, args []string) {
-		file, ok := resolveBackupFile(argOrEmpty(args), restoreDir)
-		if !ok {
-			return
+	RunE: func(cmd *cobra.Command, args []string) error {
+		jsonMode := util.IsJSONOutput(cmd)
+		if jsonMode && (argOrEmpty(args) == "" || !restoreYes) {
+			return errNonInteractiveJSON
+		}
+
+		file, err := resolveBackupFile(argOrEmpty(args), restoreDir)
+		if err != nil {
+			return err
 		}
 
 		configs, err := loadBackupFile(file)
 		if err != nil {
-			color.Red("%v\n", err)
-			return
+			return err
 		}
 		if len(configs) == 0 {
 			color.Yellow("No connectors found in %s\n", file)
-			return
+			return util.ErrNothingToDo
 		}
 
-		client, ok := util.NewKafkaConnectClient()
-		if !ok {
-			return
+		client, err := util.NewKafkaConnectClient()
+		if err != nil {
+			return err
 		}
 
-		if isDryRun(cmd) {
+		if util.IsDryRun(cmd) {
 			color.Yellow("[dry-run] Would restore %d connector(s) from %s:\n", len(configs), file)
 			for _, name := range sortedKeys(configs) {
 				color.Yellow("  - %s\n", name)
 			}
-			return
+			return nil
 		}
 
 		// Detect connectors that already exist so we can confirm overwrites.
@@ -80,17 +84,22 @@ var RestoreCmd = &cobra.Command{
 
 		if len(toRestore) == 0 {
 			color.Yellow("Nothing to restore\n")
-			return
+			return util.ErrNothingToDo
 		}
 
 		stop := util.StartSpinner("Restoring connectors...")
 		restored, err := connector.RestoreConnectorConfigs(cmd.Context(), client, toRestore)
 		stop()
 		if err != nil {
-			color.Red("Failed after restoring %d connector(s): %v\n", len(restored), err)
-			return
+			return fmt.Errorf("failed after restoring %d connector(s): %w", len(restored), err)
+		}
+		if jsonMode {
+			b, _ := json.Marshal(map[string]any{"action": "restore", "file": file, "restored": len(restored), "result": "ok"})
+			fmt.Println(string(b))
+			return nil
 		}
 		color.Green("Successfully restored %d connector(s)\n", len(restored))
+		return nil
 	},
 }
 
@@ -101,15 +110,14 @@ func init() {
 
 // resolveBackupFile returns the backup file to use: the provided path, or an
 // interactive pick from the newest *.json files in dir.
-func resolveBackupFile(file, dir string) (string, bool) {
+func resolveBackupFile(file, dir string) (string, error) {
 	if file != "" {
-		return file, true
+		return file, nil
 	}
 
 	entries, err := filepath.Glob(filepath.Join(dir, "*.json"))
 	if err != nil || len(entries) == 0 {
-		color.Red("No backup files found in %s (pass a file path explicitly)\n", dir)
-		return "", false
+		return "", fmt.Errorf("no backup files found in %s (pass a file path explicitly)", dir)
 	}
 	// Timestamped names sort chronologically; reverse for newest first.
 	sort.Sort(sort.Reverse(sort.StringSlice(entries)))
@@ -118,10 +126,9 @@ func resolveBackupFile(file, dir string) (string, bool) {
 	var selected string
 	prompt := &survey.Select{Message: "Pick a backup file:", Options: append(entries, cancelOpt)}
 	if err := survey.AskOne(prompt, &selected); err != nil || selected == cancelOpt {
-		color.Yellow("Canceled\n")
-		return "", false
+		return "", util.ErrCanceled
 	}
-	return selected, true
+	return selected, nil
 }
 
 // loadBackupFile reads and parses a backup file into name→config maps.

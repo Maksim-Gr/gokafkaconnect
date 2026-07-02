@@ -1,6 +1,8 @@
 package connector
 
 import (
+	"fmt"
+
 	"github.com/Maksim-Gr/kkon/internal/util"
 
 	"github.com/AlecAivazis/survey/v2"
@@ -16,20 +18,24 @@ var DeleteCmd = &cobra.Command{
 	Short: "Delete a connector",
 	Long:  "Delete a connector from Kafka Connect (select interactively or pass the connector name).",
 	Args:  cobra.MaximumNArgs(1),
-	Run: func(cmd *cobra.Command, args []string) {
-		client, ok := util.NewKafkaConnectClient()
-		if !ok {
-			return
+	RunE: func(cmd *cobra.Command, args []string) error {
+		if util.IsJSONOutput(cmd) && (argOrEmpty(args) == "" || !deleteYes) {
+			return errNonInteractiveJSON
 		}
 
-		name, ok := util.ResolveConnectorName(cmd.Context(), client, argOrEmpty(args))
-		if !ok {
-			return
+		client, err := util.NewKafkaConnectClient()
+		if err != nil {
+			return err
 		}
 
-		if isDryRun(cmd) {
+		name, err := util.ResolveConnectorName(cmd.Context(), client, argOrEmpty(args))
+		if err != nil {
+			return err
+		}
+
+		if util.IsDryRun(cmd) {
 			color.Yellow("[dry-run] Would delete connector %s\n", name)
-			return
+			return nil
 		}
 
 		if !deleteYes {
@@ -37,21 +43,20 @@ var DeleteCmd = &cobra.Command{
 			if err := survey.AskOne(&survey.Confirm{
 				Message: "Delete " + name + "?",
 				Default: false,
-			}, &confirmed); err != nil {
-				color.Yellow("Canceled\n")
-				return
-			}
-			if !confirmed {
-				color.Yellow("Canceled\n")
-				return
+			}, &confirmed); err != nil || !confirmed {
+				return util.ErrCanceled
 			}
 		}
 
 		if err := client.DeleteConnector(cmd.Context(), name); err != nil {
-			color.Red("Failed to delete connector: %v\n", err)
-			return
+			return fmt.Errorf("failed to delete connector: %w", err)
+		}
+		if util.IsJSONOutput(cmd) {
+			printActionJSON(name, "delete")
+			return nil
 		}
 		color.Green("Connector %s deleted\n", name)
+		return nil
 	},
 }
 

@@ -12,82 +12,82 @@ import (
 )
 
 // NewKafkaConnectClient creates a connector client using the configured Kafka Connect URL.
-func NewKafkaConnectClient() (*connector.Client, bool) {
+func NewKafkaConnectClient() (*connector.Client, error) {
 	cfg, err := LoadConfig()
 	if err != nil {
-		color.Red("Failed to load config: %v\n", err)
-		return nil, false
+		return nil, fmt.Errorf("failed to load config: %w", err)
 	}
 	client := connector.NewClient(cfg.KafkaConnect.URL)
 	if cfg.KafkaConnect.Username != "" {
 		client.SetBasicAuth(cfg.KafkaConnect.Username, cfg.KafkaConnect.Password)
 	}
-	return client, true
+	return client, nil
 }
 
 // ResolveConnectorName returns a connector name from:
 //  1. provided flag value (if not empty), or
 //  2. interactive selection from the API.
-func ResolveConnectorName(ctx context.Context, client *connector.Client, flagValue string) (string, bool) {
+//
+// It returns ErrCanceled if the user cancels the selection and ErrNothingToDo
+// if there are no connectors to choose from.
+func ResolveConnectorName(ctx context.Context, client *connector.Client, flagValue string) (string, error) {
 	if flagValue != "" {
-		return flagValue, true
+		return flagValue, nil
 	}
 
 	connectors, err := client.ListConnectors(ctx)
 	if err != nil {
-		color.Red("Failed to list connectors: %v\n", err)
-		return "", false
+		return "", fmt.Errorf("failed to list connectors: %w", err)
 	}
 	if len(connectors) == 0 {
 		color.Yellow("No connectors found\n")
-		return "", false
+		return "", ErrNothingToDo
 	}
 
 	const cancelOpt = "← Cancel"
 	var name string
 	prompt := &survey.Select{Message: "Pick connector:", Options: append(connectors, cancelOpt)}
 	if err := survey.AskOne(prompt, &name); err != nil || name == cancelOpt {
-		color.Yellow("Canceled\n")
-		return "", false
+		return "", ErrCanceled
 	}
-	return name, true
+	return name, nil
 }
 
 // ResolveTaskID returns a task id from:
 //  1. provided flag value (if >= 0), or
 //  2. interactive selection from the API.
-func ResolveTaskID(ctx context.Context, client *connector.Client, connectorName string, flagValue int, dryRun bool) (int, bool) {
+//
+// It returns ErrCanceled if the user cancels the selection and ErrNothingToDo
+// if the connector has no tasks.
+func ResolveTaskID(ctx context.Context, client *connector.Client, connectorName string, flagValue int, dryRun bool) (int, error) {
 	if flagValue >= 0 {
 		if dryRun {
-			return flagValue, true
+			return flagValue, nil
 		}
 		tasks, err := client.ListConnectorTasks(ctx, connectorName)
 		if err != nil {
-			color.Red("Failed to list tasks for %s: %v\n", connectorName, err)
-			return -1, false
+			return -1, fmt.Errorf("failed to list tasks for %s: %w", connectorName, err)
 		}
 		for _, t := range tasks {
 			if t.Task == flagValue {
-				return flagValue, true
+				return flagValue, nil
 			}
 		}
-		color.Red("Task %d not found for connector %s\n", flagValue, connectorName)
-		return -1, false
+		return -1, fmt.Errorf("task %d not found for connector %s", flagValue, connectorName)
 	}
 
 	if dryRun {
 		color.Yellow("[dry-run] Would ask for task id for connector: %s\n", connectorName)
-		return -1, false
+		return -1, ErrNothingToDo
 	}
 
 	tasks, err := client.ListConnectorTasks(ctx, connectorName)
 	if err != nil {
-		color.Red("Failed to list tasks for %s: %v\n", connectorName, err)
-		return -1, false
+		return -1, fmt.Errorf("failed to list tasks for %s: %w", connectorName, err)
 	}
 	if len(tasks) == 0 {
 		color.Yellow("No tasks found for %s\n", connectorName)
-		return -1, false
+		return -1, ErrNothingToDo
 	}
 
 	const cancelOpt = "← Cancel"
@@ -100,16 +100,14 @@ func ResolveTaskID(ctx context.Context, client *connector.Client, connectorName 
 	var selected string
 	prompt := &survey.Select{Message: "Pick task id:", Options: options}
 	if err := survey.AskOne(prompt, &selected); err != nil || selected == cancelOpt {
-		color.Yellow("Canceled\n")
-		return -1, false
+		return -1, ErrCanceled
 	}
 
 	id, err := strconv.Atoi(selected)
 	if err != nil {
-		color.Red("Invalid task id: %v\n", err)
-		return -1, false
+		return -1, fmt.Errorf("invalid task id: %w", err)
 	}
-	return id, true
+	return id, nil
 }
 
 // FormatTaskRef returns a human-readable "connector task N" string.

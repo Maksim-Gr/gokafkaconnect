@@ -3,7 +3,6 @@ package task
 import (
 	"encoding/json"
 	"fmt"
-	"os"
 
 	"github.com/Maksim-Gr/kkon/internal/util"
 
@@ -15,23 +14,16 @@ var listCmd = &cobra.Command{
 	Use:   "list",
 	Short: "List tasks for a connector",
 	Long:  "Lists tasks for a selected connector (or --connector).",
-	Run: func(cmd *cobra.Command, _ []string) {
-		client, ok := util.NewKafkaConnectClient()
-		if !ok {
-			return
+	RunE: func(cmd *cobra.Command, _ []string) error {
+		client, err := util.NewKafkaConnectClient()
+		if err != nil {
+			return err
 		}
 
-		name, ok := util.ResolveConnectorName(cmd.Context(), client, connectorName)
-		if !ok {
-			return
+		name, err := util.ResolveConnectorName(cmd.Context(), client, connectorName)
+		if err != nil {
+			return err
 		}
-
-		if dryRun != nil && *dryRun {
-			color.Yellow("[dry-run] Would list tasks for connector: %s\n", name)
-			return
-		}
-
-		jsonMode := cmd.Root().PersistentFlags().Lookup("output").Value.String() == "json"
 
 		stop := util.StartSpinner("Fetching tasks...")
 		tasks, err := client.ListConnectorTasks(cmd.Context(), name)
@@ -39,15 +31,10 @@ var listCmd = &cobra.Command{
 		stop()
 
 		if err != nil {
-			if jsonMode {
-				fmt.Fprintf(os.Stderr, "error: %v\n", err)
-			} else {
-				color.Red("Failed to list tasks for %s: %v\n", name, err)
-			}
-			return
+			return fmt.Errorf("failed to list tasks for %s: %w", name, err)
 		}
 
-		if jsonMode {
+		if util.IsJSONOutput(cmd) {
 			type taskJSON struct {
 				Connector string `json:"connector"`
 				Task      int    `json:"task"`
@@ -67,12 +54,12 @@ var listCmd = &cobra.Command{
 			}
 			b, _ := json.MarshalIndent(out, "", "  ")
 			fmt.Println(string(b))
-			return
+			return nil
 		}
 
 		if len(tasks) == 0 {
 			color.Yellow("No tasks found for %s\n", name)
-			return
+			return nil
 		}
 
 		taskStates := make(map[int]string, len(connStatus.Tasks))
@@ -88,6 +75,7 @@ var listCmd = &cobra.Command{
 			}
 			fmt.Printf("  Task %d%s\n", t.Task, badge)
 		}
+		return nil
 	},
 }
 

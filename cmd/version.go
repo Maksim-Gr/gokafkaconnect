@@ -23,10 +23,11 @@ func SetVersionInfo(version, commit, date string) {
 var versionCmd = &cobra.Command{
 	Use:   "version",
 	Short: "Print version information",
-	Run: func(_ *cobra.Command, _ []string) {
+	RunE: func(_ *cobra.Command, _ []string) error {
 		fmt.Printf("kkon %s\n", versionStr)
 		fmt.Printf("commit: %s\n", commitStr)
 		fmt.Printf("built:  %s\n", dateStr)
+		return nil
 	},
 }
 
