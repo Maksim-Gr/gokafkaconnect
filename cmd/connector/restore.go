@@ -88,17 +88,33 @@ var RestoreCmd = &cobra.Command{
 		}
 
 		stop := util.StartSpinner("Restoring connectors...")
-		restored, err := connector.RestoreConnectorConfigs(cmd.Context(), client, toRestore)
+		results := connector.RestoreConnectorConfigs(cmd.Context(), client, toRestore)
 		stop()
-		if err != nil {
-			return fmt.Errorf("failed after restoring %d connector(s): %w", len(restored), err)
+
+		failed := 0
+		for _, r := range results {
+			if r.Error != "" {
+				failed++
+			}
 		}
+
 		if jsonMode {
-			b, _ := json.Marshal(map[string]any{"action": "restore", "file": file, "restored": len(restored), "result": "ok"})
+			b, _ := json.MarshalIndent(results, "", "  ")
 			fmt.Println(string(b))
-			return nil
+		} else {
+			for _, r := range results {
+				if r.Error != "" {
+					color.Red("  ✗ %s: %s\n", r.Name, r.Error)
+				} else {
+					color.Green("  ✓ %s\n", r.Name)
+				}
+			}
+			color.Green("Restored %d/%d connector(s)\n", len(results)-failed, len(results))
 		}
-		color.Green("Successfully restored %d connector(s)\n", len(restored))
+
+		if failed > 0 {
+			return fmt.Errorf("%d of %d connector(s) failed to restore", failed, len(results))
+		}
 		return nil
 	},
 }
