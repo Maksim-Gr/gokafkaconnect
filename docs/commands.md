@@ -40,7 +40,7 @@ kkon connector <subcommand>
 ```
 
 Subcommands:
-- `create` Create a connector from predefined templates or from a JSON file.
+- `create` Create a connector from predefined templates, from any installed plugin (`--plugin <class>` or the `Custom` wizard option), or from a JSON file.
 - `update` Update an existing connector's configuration (shows a before→after diff).
 - `delete [name...]` Delete one or more connectors (multi-select, names, or `--all`).
 - `list` List connectors and interactively show one config.

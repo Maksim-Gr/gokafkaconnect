@@ -105,6 +105,51 @@ func TestWaitForConnectorRunning_NeverHealthy(t *testing.T) {
 	assert.Equal(t, "alpha", status.Name)
 }
 
+func TestFieldsToPrompt(t *testing.T) {
+	res := connector.ConfigValidationResponse{
+		Configs: []connector.ConfigEntry{
+			{Definition: connector.ConfigDefinition{Name: "connector.class", Required: true}},
+			{Definition: connector.ConfigDefinition{Name: "name", Required: true}},
+			{Definition: connector.ConfigDefinition{Name: "connection.url", Required: true, Documentation: "URL."}},
+			{Definition: connector.ConfigDefinition{Name: "auto.create", Required: false, DefaultValue: false}},
+			{Definition: connector.ConfigDefinition{Name: "tasks.max", Required: true, DefaultValue: float64(1)}},
+			{
+				Definition: connector.ConfigDefinition{Name: "topics", Required: true},
+				Value:      connector.ConfigValue{Name: "topics", Value: "bad topic", Errors: []string{"invalid"}},
+			},
+			{
+				Definition: connector.ConfigDefinition{Name: "connection.password", Required: true},
+				Value:      connector.ConfigValue{Name: "connection.password"},
+			},
+			{
+				Definition: connector.ConfigDefinition{Name: "insert.mode", Required: true},
+				Value:      connector.ConfigValue{Name: "insert.mode", RecommendedValues: []any{"insert", "upsert"}},
+			},
+		},
+	}
+
+	fields := fieldsToPrompt(res)
+	names := make([]string, 0, len(fields))
+	for _, f := range fields {
+		names = append(names, f.Name)
+	}
+	// connector.class and name are wizard-managed; fields with defaults are
+	// skipped; required-empty and errored fields are included.
+	assert.Equal(t, []string{"connection.url", "topics", "connection.password", "insert.mode"}, names)
+
+	assert.Equal(t, "URL.", fields[0].Doc)
+	assert.Equal(t, "bad topic", fields[1].Default, "errored field re-prompts with its current value")
+	assert.Equal(t, []string{"invalid"}, fields[1].Errors)
+	assert.True(t, fields[2].Secret, "password fields must be masked")
+	assert.Equal(t, []string{"insert", "upsert"}, fields[3].Recommended)
+}
+
+func TestIsSecretField(t *testing.T) {
+	assert.True(t, isSecretField("connection.password"))
+	assert.True(t, isSecretField("aws.secret.access.key"))
+	assert.False(t, isSecretField("connection.url"))
+}
+
 func TestRunBulk_AllSucceed(t *testing.T) {
 	var attempted []string
 	err := runBulk(context.Background(), false, "pause", []string{"a", "b"}, func(_ context.Context, name string) error {
