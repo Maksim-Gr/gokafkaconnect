@@ -5,6 +5,10 @@
 ## Unreleased
 
 ### Changed
+- `connector restore` no longer stops at the first failure: every connector in
+  the backup is attempted (in sorted order), a per-connector ✓/✗ summary is
+  printed, and the command exits `1` if any restore failed. With `-o json` the
+  per-connector results are emitted as a JSON array.
 - **Breaking for scripts:** commands now exit with code `1` on failure
   (previously failures were printed but the process exited `0`). User cancels
   and no-op runs still exit `0`.
