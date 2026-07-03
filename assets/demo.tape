@@ -51,4 +51,45 @@ Sleep 600ms
 Enter
 Sleep 3s
 
-Sleep 2s
+Sleep 1.5s
+
+# ── Create a connector from any installed plugin ──────────────────────────────
+Type "clear"
+Enter
+Sleep 500ms
+
+Type "kkon connector create"
+Sleep 400ms
+Enter
+Sleep 1.5s
+
+# Scroll past the built-in templates to "Custom (choose from installed plugins)"
+Down@250ms 5
+Sleep 500ms
+Enter
+Sleep 1.5s
+
+# Pick a plugin installed on the cluster
+Down@250ms 2
+Sleep 500ms
+Enter
+Sleep 1s
+
+Type "demo-mirror-source"
+Sleep 400ms
+Enter
+Sleep 2.5s
+
+# The validate endpoint flags the one required field with no default
+Type "source"
+Sleep 400ms
+Enter
+Sleep 2.5s
+
+# Accept the reviewed config as-is, then confirm submission
+Enter
+Sleep 800ms
+Enter
+Sleep 2.5s
+
+Sleep 1.5s
