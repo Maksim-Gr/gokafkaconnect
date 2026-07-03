@@ -105,6 +105,42 @@ func TestWaitForConnectorRunning_NeverHealthy(t *testing.T) {
 	assert.Equal(t, "alpha", status.Name)
 }
 
+func TestRunBulk_AllSucceed(t *testing.T) {
+	var attempted []string
+	err := runBulk(context.Background(), false, "pause", []string{"a", "b"}, func(_ context.Context, name string) error {
+		attempted = append(attempted, name)
+		return nil
+	})
+	require.NoError(t, err)
+	assert.Equal(t, []string{"a", "b"}, attempted)
+}
+
+func TestRunBulk_ContinuesPastFailure(t *testing.T) {
+	var attempted []string
+	err := runBulk(context.Background(), false, "pause", []string{"a", "bad", "c"}, func(_ context.Context, name string) error {
+		attempted = append(attempted, name)
+		if name == "bad" {
+			return assert.AnError
+		}
+		return nil
+	})
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "failed to pause 1 of 3 connector(s)")
+	assert.Equal(t, []string{"a", "bad", "c"}, attempted, "all names must still be attempted")
+}
+
+func TestRunBulk_CanceledContextSkipsRemaining(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	var attempted []string
+	err := runBulk(ctx, false, "pause", []string{"a", "b"}, func(_ context.Context, name string) error {
+		attempted = append(attempted, name)
+		return nil
+	})
+	require.Error(t, err)
+	assert.Empty(t, attempted, "canceled context must not invoke the operation")
+}
+
 func TestWaitForConnectorRunning_AllErrors(t *testing.T) {
 	client := newStatusClient(t, func(_ int) (int, string) {
 		return http.StatusInternalServerError, "boom"

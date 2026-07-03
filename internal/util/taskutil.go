@@ -3,6 +3,7 @@ package util
 import (
 	"context"
 	"fmt"
+	"sort"
 	"strconv"
 
 	"github.com/Maksim-Gr/kkon/internal/connector"
@@ -51,6 +52,43 @@ func ResolveConnectorName(ctx context.Context, client *connector.Client, flagVal
 		return "", ErrCanceled
 	}
 	return name, nil
+}
+
+// ResolveConnectorNames returns connector names from:
+//  1. positional args (if any), or
+//  2. all connectors when all is true, or
+//  3. interactive multi-selection from the API.
+//
+// It returns ErrCanceled if the user cancels the selection and ErrNothingToDo
+// if there are no connectors to choose from.
+func ResolveConnectorNames(ctx context.Context, client *connector.Client, args []string, all bool) ([]string, error) {
+	if len(args) > 0 && all {
+		return nil, fmt.Errorf("cannot combine --all with connector names")
+	}
+	if len(args) > 0 {
+		return args, nil
+	}
+
+	connectors, err := client.ListConnectors(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list connectors: %w", err)
+	}
+	if len(connectors) == 0 {
+		color.Yellow("No connectors found\n")
+		return nil, ErrNothingToDo
+	}
+	sort.Strings(connectors)
+
+	if all {
+		return connectors, nil
+	}
+
+	var selected []string
+	prompt := &survey.MultiSelect{Message: "Pick connectors:", Options: connectors}
+	if err := survey.AskOne(prompt, &selected, survey.WithValidator(survey.MinItems(1))); err != nil {
+		return nil, ErrCanceled
+	}
+	return selected, nil
 }
 
 // ResolveTaskID returns a task id from:

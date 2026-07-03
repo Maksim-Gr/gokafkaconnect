@@ -4,6 +4,13 @@
 
 ## Unreleased
 
+### Added
+- Bulk operations: `pause`, `resume`, `restart`, and `delete` now accept
+  multiple connector names, `--all`, or an interactive multi-select. Bulk runs
+  continue past individual failures, print a per-connector ✓/✗ summary, and
+  exit `1` if any operation failed. `pause`/`resume` gained `--yes` (confirmation
+  is only asked when targeting more than one connector).
+
 ### Changed
 - `connector restore` no longer stops at the first failure: every connector in
   the backup is attempted (in sorted order), a per-connector ✓/✗ summary is
