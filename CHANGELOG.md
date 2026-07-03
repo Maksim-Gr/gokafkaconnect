@@ -8,7 +8,9 @@
 - `connector create` can now configure a connector from **any plugin installed
   on the cluster**: pick `Custom (choose from installed plugins)` in the wizard
   or pass `--plugin <class>`. The wizard uses the Kafka Connect validate
-  endpoint to discover required fields, offers server-recommended values as
+  endpoint to discover required fields — every required field is prompted for
+  (its plugin-defined default, if any, is pre-filled as the suggested answer
+  rather than silently accepted), offers server-recommended values as
   choices, and masks password/secret fields.
 - Bulk operations: `pause`, `resume`, `restart`, and `delete` now accept
   multiple connector names, `--all`, or an interactive multi-select. Bulk runs
