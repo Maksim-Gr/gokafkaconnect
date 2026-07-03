@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -19,9 +21,9 @@ func TestRestoreConnectorConfigs(t *testing.T) {
 		"alpha": {"name": "alpha", "connector.class": "com.example.Alpha"},
 	}
 
-	restored, err := RestoreConnectorConfigs(context.Background(), client, configs)
-	require.NoError(t, err)
-	assert.Equal(t, []string{"alpha"}, restored)
+	results := RestoreConnectorConfigs(context.Background(), client, configs)
+	require.Len(t, results, 1)
+	assert.Equal(t, RestoreResult{Name: "alpha"}, results[0])
 	assert.Equal(t, http.MethodPut, rec.method)
 	assert.Equal(t, "/connectors/alpha/config", rec.path)
 
@@ -30,17 +32,57 @@ func TestRestoreConnectorConfigs(t *testing.T) {
 	assert.Equal(t, "com.example.Alpha", sent["connector.class"])
 }
 
-func TestRestoreConnectorConfigsError(t *testing.T) {
-	client, _ := newTestClient(t, func(w http.ResponseWriter, _ *http.Request) {
-		w.WriteHeader(http.StatusInternalServerError)
-		_, _ = w.Write([]byte("boom"))
-	})
+func TestRestoreConnectorConfigs_ContinuesPastFailure(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if strings.HasPrefix(r.URL.Path, "/connectors/bad/") {
+			w.WriteHeader(http.StatusInternalServerError)
+			_, _ = w.Write([]byte("boom"))
+			return
+		}
+		w.WriteHeader(http.StatusOK)
+	}))
+	t.Cleanup(srv.Close)
+	client := NewClient(srv.URL)
 
 	configs := map[string]map[string]string{
+		"zulu":  {"name": "zulu"},
+		"bad":   {"name": "bad"},
 		"alpha": {"name": "alpha"},
 	}
 
-	_, err := RestoreConnectorConfigs(context.Background(), client, configs)
-	require.Error(t, err)
-	assert.Contains(t, err.Error(), "boom")
+	results := RestoreConnectorConfigs(context.Background(), client, configs)
+	require.Len(t, results, 3)
+
+	// Sorted name order, and the failure does not stop the rest.
+	assert.Equal(t, "alpha", results[0].Name)
+	assert.Empty(t, results[0].Error)
+	assert.Equal(t, "bad", results[1].Name)
+	assert.Contains(t, results[1].Error, "boom")
+	assert.Equal(t, "zulu", results[2].Name)
+	assert.Empty(t, results[2].Error)
+}
+
+func TestRestoreConnectorConfigs_CanceledContext(t *testing.T) {
+	calls := 0
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		calls++
+		w.WriteHeader(http.StatusOK)
+	}))
+	t.Cleanup(srv.Close)
+	client := NewClient(srv.URL)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+
+	configs := map[string]map[string]string{
+		"alpha": {"name": "alpha"},
+		"beta":  {"name": "beta"},
+	}
+
+	results := RestoreConnectorConfigs(ctx, client, configs)
+	require.Len(t, results, 2)
+	for _, r := range results {
+		assert.Contains(t, r.Error, "context canceled")
+	}
+	assert.Zero(t, calls, "canceled context must not contact the API")
 }

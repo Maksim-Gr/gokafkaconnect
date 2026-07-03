@@ -4,7 +4,23 @@
 
 ## Unreleased
 
+### Added
+- `connector create` can now configure a connector from **any plugin installed
+  on the cluster**: pick `Custom (choose from installed plugins)` in the wizard
+  or pass `--plugin <class>`. The wizard uses the Kafka Connect validate
+  endpoint to discover required fields, offers server-recommended values as
+  choices, and masks password/secret fields.
+- Bulk operations: `pause`, `resume`, `restart`, and `delete` now accept
+  multiple connector names, `--all`, or an interactive multi-select. Bulk runs
+  continue past individual failures, print a per-connector ✓/✗ summary, and
+  exit `1` if any operation failed. `pause`/`resume` gained `--yes` (confirmation
+  is only asked when targeting more than one connector).
+
 ### Changed
+- `connector restore` no longer stops at the first failure: every connector in
+  the backup is attempted (in sorted order), a per-connector ✓/✗ summary is
+  printed, and the command exits `1` if any restore failed. With `-o json` the
+  per-connector results are emitted as a JSON array.
 - **Breaking for scripts:** commands now exit with code `1` on failure
   (previously failures were printed but the process exited `0`). User cancels
   and no-op runs still exit `0`.
@@ -15,6 +31,12 @@
   non-interactive) or fail fast instead of prompting.
 - `connector list --config <name> -o json` prints the raw config JSON, and
   unknown connector names are reported as errors.
+
+### Fixed
+- The create wizard now submits the payload shape `POST /connectors` expects
+  (`{"name": ..., "config": {...}}`) and prompts for a connector name when the
+  template doesn't carry one — previously every template submission was
+  rejected by the server.
 
 ---
 

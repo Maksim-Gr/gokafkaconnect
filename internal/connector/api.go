@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"sort"
 	"time"
 )
 
@@ -166,16 +167,39 @@ func (c *Client) GetConnectorConfigJSON(ctx context.Context, name string) (map[s
 	return cfg, nil
 }
 
-// ConfigValidationResponse is a minimal view of the connector config validation result.
+// ConfigDefinition describes a config key as reported by the validate
+// endpoint. DefaultValue is any because plugins report typed defaults
+// (string, number, boolean, or null).
+type ConfigDefinition struct {
+	Name          string `json:"name"`
+	Type          string `json:"type"`
+	Required      bool   `json:"required"`
+	DefaultValue  any    `json:"default_value"`
+	Importance    string `json:"importance"`
+	Documentation string `json:"documentation"`
+	Group         string `json:"group"`
+}
+
+// ConfigValue holds the submitted value, server-recommended values, and
+// per-field validation errors for a config key.
+type ConfigValue struct {
+	Name              string   `json:"name"`
+	Value             any      `json:"value"`
+	RecommendedValues []any    `json:"recommended_values"`
+	Errors            []string `json:"errors"`
+}
+
+// ConfigEntry pairs a config key's definition with its validated value.
+type ConfigEntry struct {
+	Definition ConfigDefinition `json:"definition"`
+	Value      ConfigValue      `json:"value"`
+}
+
+// ConfigValidationResponse is the connector config validation result.
 type ConfigValidationResponse struct {
-	Name       string `json:"name"`
-	ErrorCount int    `json:"error_count"`
-	Configs    []struct {
-		Value struct {
-			Name   string   `json:"name"`
-			Errors []string `json:"errors"`
-		} `json:"value"`
-	} `json:"configs"`
+	Name       string        `json:"name"`
+	ErrorCount int           `json:"error_count"`
+	Configs    []ConfigEntry `json:"configs"`
 }
 
 // ValidateConnectorConfig validates a connector config against its plugin and
@@ -240,20 +264,38 @@ func BackupConnectorConfig(
 	return outputFile, nil
 }
 
+// RestoreResult reports the outcome of restoring a single connector.
+// Error is empty when the restore succeeded.
+type RestoreResult struct {
+	Name  string `json:"name"`
+	Error string `json:"error,omitempty"`
+}
+
 // RestoreConnectorConfigs re-creates or updates each connector via PUT
-// /connectors/{name}/config (upsert). It returns the names that were restored,
-// stopping at the first failure.
+// /connectors/{name}/config (upsert). Connectors are processed in sorted name
+// order and failures do not stop the remaining restores; each connector's
+// outcome is reported in the returned results. A canceled context marks the
+// remaining connectors as failed without contacting the API.
 func RestoreConnectorConfigs(
 	ctx context.Context,
 	client *Client,
 	configs map[string]map[string]string,
-) ([]string, error) {
-	restored := make([]string, 0, len(configs))
-	for name, cfg := range configs {
-		if err := client.UpdateConnectorConfig(ctx, name, cfg); err != nil {
-			return restored, err
-		}
-		restored = append(restored, name)
+) []RestoreResult {
+	names := make([]string, 0, len(configs))
+	for name := range configs {
+		names = append(names, name)
 	}
-	return restored, nil
+	sort.Strings(names)
+
+	results := make([]RestoreResult, 0, len(names))
+	for _, name := range names {
+		result := RestoreResult{Name: name}
+		if err := ctx.Err(); err != nil {
+			result.Error = err.Error()
+		} else if err := client.UpdateConnectorConfig(ctx, name, configs[name]); err != nil {
+			result.Error = err.Error()
+		}
+		results = append(results, result)
+	}
+	return results
 }
