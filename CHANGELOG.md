@@ -37,6 +37,11 @@
   (`{"name": ..., "config": {...}}`) and prompts for a connector name when the
   template doesn't carry one — previously every template submission was
   rejected by the server.
+- `--dry-run` combined with `-o json` now emits a JSON result (or array of
+  results) with `"result": "dry-run"` instead of plain text, for `pause`,
+  `resume`, `restart`, `delete`, `restore`, and `create --file`.
+- `backup` now supports `-o json`, emitting a result object on both the
+  dry-run and real paths instead of silently ignoring the flag.
 
 ---
 

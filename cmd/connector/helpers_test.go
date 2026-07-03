@@ -2,8 +2,11 @@ package connector
 
 import (
 	"context"
+	"encoding/json"
+	"io"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"testing"
 
 	"github.com/Maksim-Gr/kkon/internal/connector"
@@ -11,6 +14,23 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
+
+// captureStdout runs fn with os.Stdout redirected and returns what it printed.
+func captureStdout(t *testing.T, fn func()) string {
+	t.Helper()
+	r, w, err := os.Pipe()
+	require.NoError(t, err)
+	orig := os.Stdout
+	os.Stdout = w
+	defer func() { os.Stdout = orig }()
+
+	fn()
+
+	require.NoError(t, w.Close())
+	out, err := io.ReadAll(r)
+	require.NoError(t, err)
+	return string(out)
+}
 
 func TestConnectorHealthy(t *testing.T) {
 	tests := []struct {
@@ -184,6 +204,46 @@ func TestRunBulk_CanceledContextSkipsRemaining(t *testing.T) {
 	})
 	require.Error(t, err)
 	assert.Empty(t, attempted, "canceled context must not invoke the operation")
+}
+
+func TestPrintDryRunPreview_JSONMode_SingleName(t *testing.T) {
+	out := captureStdout(t, func() {
+		printDryRunPreview(true, "pause", []string{"alpha"}, "")
+	})
+
+	var result map[string]string
+	require.NoError(t, json.Unmarshal([]byte(out), &result), "dry-run json output must be valid JSON: %q", out)
+	assert.Equal(t, "alpha", result["name"])
+	assert.Equal(t, "pause", result["action"])
+	assert.Equal(t, "dry-run", result["result"])
+}
+
+func TestPrintDryRunPreview_JSONMode_MultipleNames(t *testing.T) {
+	out := captureStdout(t, func() {
+		printDryRunPreview(true, "restart", []string{"alpha", "beta"}, "")
+	})
+
+	var results []map[string]string
+	require.NoError(t, json.Unmarshal([]byte(out), &results), "dry-run json output must be valid JSON array: %q", out)
+	require.Len(t, results, 2)
+	assert.Equal(t, "alpha", results[0]["name"])
+	assert.Equal(t, "beta", results[1]["name"])
+	for _, r := range results {
+		assert.Equal(t, "restart", r["action"])
+		assert.Equal(t, "dry-run", r["result"])
+	}
+}
+
+func TestPrintResultLines_ReturnsFailureCount(t *testing.T) {
+	failed := printResultLines(false, nil, []string{"a", "b", "c"}, []string{"", "boom", ""})
+	assert.Equal(t, 1, failed)
+}
+
+func TestPrintResultLines_JSONModePrintsGivenBytes(t *testing.T) {
+	out := captureStdout(t, func() {
+		printResultLines(true, []byte(`{"custom":"payload"}`), nil, nil)
+	})
+	assert.JSONEq(t, `{"custom":"payload"}`, out)
 }
 
 func TestWaitForConnectorRunning_AllErrors(t *testing.T) {

@@ -98,6 +98,11 @@ func submitConnectorFromFile(cmd *cobra.Command, path string) error {
 		return fmt.Errorf("invalid JSON in %s: %w", path, err)
 	}
 
+	var meta struct {
+		Name string `json:"name"`
+	}
+	_ = json.Unmarshal(b, &meta)
+
 	client, err := util.NewKafkaConnectClient()
 	if err != nil {
 		return err
@@ -115,6 +120,10 @@ func submitConnectorFromFile(cmd *cobra.Command, path string) error {
 	}
 
 	if util.IsDryRun(cmd) {
+		if jsonMode {
+			printDryRunPreview(jsonMode, "create", []string{meta.Name}, "")
+			return nil
+		}
 		color.Yellow("[dry-run] Would submit connector from file %s\n", path)
 		return nil
 	}
@@ -127,10 +136,6 @@ func submitConnectorFromFile(cmd *cobra.Command, path string) error {
 	}
 
 	if jsonMode {
-		var meta struct {
-			Name string `json:"name"`
-		}
-		_ = json.Unmarshal(b, &meta)
 		printActionJSON(meta.Name, "create")
 		return nil
 	}

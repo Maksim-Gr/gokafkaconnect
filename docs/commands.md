@@ -10,7 +10,7 @@ kkon [flags] <command> [subcommand] [flags]
 
 Global flags:
 - `-d, --dry-run` Preview mutating commands without executing them. Applies to commands that change Kafka Connect state or write files (`create`, `update`, `delete`, `pause`, `resume`, `restart`, `backup`, `restore`, `task restart`, `config set`); read-only commands ignore it.
-- `-o, --output` Output format: `text` (default) or `json`. With `json`, read commands print pure JSON to stdout (errors go to stderr). Mutating commands accept `json` only when fully non-interactive (connector name given, plus `--yes` where a confirmation exists) and print a small result object.
+- `-o, --output` Output format: `text` (default) or `json`. With `json`, read commands print pure JSON to stdout (errors go to stderr). Mutating commands accept `json` only when fully non-interactive (connector name given, plus `--yes` where a confirmation exists) and print a small result object; combined with `--dry-run`, the same object shape is printed with `"result": "dry-run"` instead of being run.
 
 Exit codes:
 - `0` Success, user cancel (Ctrl+C or `← Cancel`), or nothing to do (e.g. no connectors found).
