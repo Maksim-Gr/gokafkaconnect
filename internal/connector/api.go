@@ -167,16 +167,39 @@ func (c *Client) GetConnectorConfigJSON(ctx context.Context, name string) (map[s
 	return cfg, nil
 }
 
-// ConfigValidationResponse is a minimal view of the connector config validation result.
+// ConfigDefinition describes a config key as reported by the validate
+// endpoint. DefaultValue is any because plugins report typed defaults
+// (string, number, boolean, or null).
+type ConfigDefinition struct {
+	Name          string `json:"name"`
+	Type          string `json:"type"`
+	Required      bool   `json:"required"`
+	DefaultValue  any    `json:"default_value"`
+	Importance    string `json:"importance"`
+	Documentation string `json:"documentation"`
+	Group         string `json:"group"`
+}
+
+// ConfigValue holds the submitted value, server-recommended values, and
+// per-field validation errors for a config key.
+type ConfigValue struct {
+	Name              string   `json:"name"`
+	Value             any      `json:"value"`
+	RecommendedValues []any    `json:"recommended_values"`
+	Errors            []string `json:"errors"`
+}
+
+// ConfigEntry pairs a config key's definition with its validated value.
+type ConfigEntry struct {
+	Definition ConfigDefinition `json:"definition"`
+	Value      ConfigValue      `json:"value"`
+}
+
+// ConfigValidationResponse is the connector config validation result.
 type ConfigValidationResponse struct {
-	Name       string `json:"name"`
-	ErrorCount int    `json:"error_count"`
-	Configs    []struct {
-		Value struct {
-			Name   string   `json:"name"`
-			Errors []string `json:"errors"`
-		} `json:"value"`
-	} `json:"configs"`
+	Name       string        `json:"name"`
+	ErrorCount int           `json:"error_count"`
+	Configs    []ConfigEntry `json:"configs"`
 }
 
 // ValidateConnectorConfig validates a connector config against its plugin and
