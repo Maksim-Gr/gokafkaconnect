@@ -62,6 +62,72 @@ func printActionJSON(name, action string) {
 	fmt.Println(string(b))
 }
 
+// printDryRunPreview reports what a lifecycle command would do to names,
+// without doing it. In json mode it emits the same {"name","action","result"}
+// shape as printActionJSON with result "dry-run" (a single object for one
+// name, an indented array for multiple), so scripts get consistent output
+// whether an action ran or was only previewed. In text mode it prints the
+// existing single-line or bulleted preview, with note appended for extra
+// context (e.g. restart's includeTasks/onlyFailed flags).
+func printDryRunPreview(jsonMode bool, verb string, names []string, note string) {
+	if jsonMode {
+		type dryRunResult struct {
+			Name   string `json:"name"`
+			Action string `json:"action"`
+			Result string `json:"result"`
+		}
+		results := make([]dryRunResult, len(names))
+		for i, n := range names {
+			results[i] = dryRunResult{Name: n, Action: verb, Result: "dry-run"}
+		}
+		if len(results) == 1 {
+			b, _ := json.Marshal(results[0])
+			fmt.Println(string(b))
+			return
+		}
+		b, _ := json.MarshalIndent(results, "", "  ")
+		fmt.Println(string(b))
+		return
+	}
+
+	if len(names) == 1 {
+		color.Yellow("[dry-run] Would %s connector %s%s\n", verb, names[0], note)
+		return
+	}
+	color.Yellow("[dry-run] Would %s %d connector(s)%s:\n", verb, len(names), note)
+	for _, n := range names {
+		color.Yellow("  - %s\n", n)
+	}
+}
+
+// printResultLines reports the outcome of a batch operation: one ✓/✗ line per
+// (name, err) pair plus a "N ok, M failed" summary in text mode, or the given
+// pre-marshaled JSON in json mode. names and errs must be parallel slices
+// (errs[i] == "" means names[i] succeeded). Returns the number of failures.
+func printResultLines(jsonMode bool, jsonBytes []byte, names []string, errs []string) int {
+	failed := 0
+	for _, e := range errs {
+		if e != "" {
+			failed++
+		}
+	}
+
+	if jsonMode {
+		fmt.Println(string(jsonBytes))
+		return failed
+	}
+
+	for i, name := range names {
+		if errs[i] != "" {
+			color.Red("  ✗ %s: %s\n", name, errs[i])
+		} else {
+			color.Green("  ✓ %s\n", name)
+		}
+	}
+	fmt.Printf("%d ok, %d failed\n", len(names)-failed, failed)
+	return failed
+}
+
 // lifecycleSpec describes a connector lifecycle command (pause, resume,
 // restart, delete) run through lifecycleRunE.
 type lifecycleSpec struct {
@@ -102,14 +168,7 @@ func lifecycleRunE(spec lifecycleSpec) func(cmd *cobra.Command, args []string) e
 			if spec.dryRunNote != nil {
 				note = spec.dryRunNote()
 			}
-			if len(names) == 1 {
-				color.Yellow("[dry-run] Would %s connector %s%s\n", spec.verb, names[0], note)
-				return nil
-			}
-			color.Yellow("[dry-run] Would %s %d connector(s)%s:\n", spec.verb, len(names), note)
-			for _, n := range names {
-				color.Yellow("  - %s\n", n)
-			}
+			printDryRunPreview(jsonMode, spec.verb, names, note)
 			return nil
 		}
 
@@ -161,7 +220,7 @@ func runBulk(ctx context.Context, jsonMode bool, verb string, names []string, op
 	}
 
 	results := make([]bulkResult, 0, len(names))
-	failed := 0
+	errs := make([]string, 0, len(names))
 	stop := util.StartSpinner(fmt.Sprintf("Running %s on %d connector(s)...", verb, len(names)))
 	for _, name := range names {
 		r := bulkResult{Name: name, Action: verb}
@@ -170,26 +229,13 @@ func runBulk(ctx context.Context, jsonMode bool, verb string, names []string, op
 		} else if err := op(ctx, name); err != nil {
 			r.Error = err.Error()
 		}
-		if r.Error != "" {
-			failed++
-		}
 		results = append(results, r)
+		errs = append(errs, r.Error)
 	}
 	stop()
 
-	if jsonMode {
-		b, _ := json.MarshalIndent(results, "", "  ")
-		fmt.Println(string(b))
-	} else {
-		for _, r := range results {
-			if r.Error != "" {
-				color.Red("  ✗ %s: %s\n", r.Name, r.Error)
-			} else {
-				color.Green("  ✓ %s\n", r.Name)
-			}
-		}
-		fmt.Printf("%d ok, %d failed\n", len(results)-failed, failed)
-	}
+	b, _ := json.MarshalIndent(results, "", "  ")
+	failed := printResultLines(jsonMode, b, names, errs)
 
 	if failed > 0 {
 		return fmt.Errorf("failed to %s %d of %d connector(s)", verb, failed, len(names))

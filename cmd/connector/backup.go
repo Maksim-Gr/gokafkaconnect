@@ -2,6 +2,7 @@
 package connector
 
 import (
+	"encoding/json"
 	"fmt"
 
 	"github.com/Maksim-Gr/kkon/internal/connector"
@@ -19,6 +20,8 @@ var BackupCmd = &cobra.Command{
 	Short: "Backup connectors config from Kafka Connect API",
 	Long:  `Backup connectors config from Kafka Connect API and save to file for future usage `,
 	RunE: func(cmd *cobra.Command, _ []string) error {
+		jsonMode := util.IsJSONOutput(cmd)
+
 		client, err := util.NewKafkaConnectClient()
 		if err != nil {
 			return err
@@ -33,6 +36,11 @@ var BackupCmd = &cobra.Command{
 
 		if util.IsDryRun(cmd) {
 			stop()
+			if jsonMode {
+				b, _ := json.Marshal(map[string]any{"connectors": connectors, "dir": backupDir, "result": "dry-run"})
+				fmt.Println(string(b))
+				return nil
+			}
 			color.Yellow("[dry-run] Would back up %d connector(s) to %s\n", len(connectors), backupDir)
 			return nil
 		}
@@ -41,6 +49,11 @@ var BackupCmd = &cobra.Command{
 		stop()
 		if err != nil {
 			return fmt.Errorf("failed to back up connectors config: %w", err)
+		}
+		if jsonMode {
+			b, _ := json.Marshal(map[string]any{"backedUp": len(connectors), "file": backupFile, "result": "ok"})
+			fmt.Println(string(b))
+			return nil
 		}
 		color.Green("Successfully backed up %d connector(s) → %s\n", len(connectors), backupFile)
 		return nil

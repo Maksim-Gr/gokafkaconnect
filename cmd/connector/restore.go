@@ -52,10 +52,7 @@ var RestoreCmd = &cobra.Command{
 		}
 
 		if util.IsDryRun(cmd) {
-			color.Yellow("[dry-run] Would restore %d connector(s) from %s:\n", len(configs), file)
-			for _, name := range sortedKeys(configs) {
-				color.Yellow("  - %s\n", name)
-			}
+			printDryRunPreview(jsonMode, "restore", sortedKeys(configs), fmt.Sprintf(" from %s", file))
 			return nil
 		}
 
@@ -91,26 +88,14 @@ var RestoreCmd = &cobra.Command{
 		results := connector.RestoreConnectorConfigs(cmd.Context(), client, toRestore)
 		stop()
 
-		failed := 0
-		for _, r := range results {
-			if r.Error != "" {
-				failed++
-			}
+		names := make([]string, len(results))
+		errs := make([]string, len(results))
+		for i, r := range results {
+			names[i] = r.Name
+			errs[i] = r.Error
 		}
-
-		if jsonMode {
-			b, _ := json.MarshalIndent(results, "", "  ")
-			fmt.Println(string(b))
-		} else {
-			for _, r := range results {
-				if r.Error != "" {
-					color.Red("  ✗ %s: %s\n", r.Name, r.Error)
-				} else {
-					color.Green("  ✓ %s\n", r.Name)
-				}
-			}
-			color.Green("Restored %d/%d connector(s)\n", len(results)-failed, len(results))
-		}
+		b, _ := json.MarshalIndent(results, "", "  ")
+		failed := printResultLines(jsonMode, b, names, errs)
 
 		if failed > 0 {
 			return fmt.Errorf("%d of %d connector(s) failed to restore", failed, len(results))
