@@ -380,8 +380,10 @@ func configureFromPlugin(cmd *cobra.Command, class string) error {
 		cfg["topics"] = topics
 	}
 
-	// Iteratively validate and prompt only for fields the server says need
-	// attention (required without value or default, or currently invalid).
+	// Iteratively validate and prompt for every required field that doesn't
+	// have an explicit value yet (its default, if any, is pre-filled as the
+	// suggested answer), plus any field the server reports as currently
+	// invalid.
 	const maxRounds = 3
 	for range maxRounds {
 		stop := util.StartSpinner("Validating config...")
@@ -418,9 +420,11 @@ type promptField struct {
 	Secret      bool
 }
 
-// fieldsToPrompt selects the config fields worth prompting for: required
-// fields without a value or default, plus any field the server reported
-// errors for. connector.class and name are managed by the wizard itself.
+// fieldsToPrompt selects the config fields worth prompting for: every
+// required field without an explicit value yet (regardless of whether the
+// plugin defines a default — the default is surfaced as the suggested answer
+// rather than silently accepted), plus any field the server reported errors
+// for. connector.class and name are managed by the wizard itself.
 func fieldsToPrompt(res connector.ConfigValidationResponse) []promptField {
 	var fields []promptField
 	for _, c := range res.Configs {
@@ -434,8 +438,8 @@ func fieldsToPrompt(res connector.ConfigValidationResponse) []promptField {
 
 		value := anyToString(c.Value.Value)
 		def := anyToString(c.Definition.DefaultValue)
-		missing := c.Definition.Required && value == "" && def == ""
-		if !missing && len(c.Value.Errors) == 0 {
+		needsInput := c.Definition.Required && value == ""
+		if !needsInput && len(c.Value.Errors) == 0 {
 			continue
 		}
 

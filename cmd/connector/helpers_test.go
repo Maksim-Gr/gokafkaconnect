@@ -133,15 +133,18 @@ func TestFieldsToPrompt(t *testing.T) {
 	for _, f := range fields {
 		names = append(names, f.Name)
 	}
-	// connector.class and name are wizard-managed; fields with defaults are
-	// skipped; required-empty and errored fields are included.
-	assert.Equal(t, []string{"connection.url", "topics", "connection.password", "insert.mode"}, names)
+	// connector.class and name are wizard-managed and always skipped;
+	// non-required fields (auto.create) are skipped; every other required
+	// field is included, even ones with a default (tasks.max) — the default
+	// becomes the suggested answer instead of being silently accepted.
+	assert.Equal(t, []string{"connection.url", "tasks.max", "topics", "connection.password", "insert.mode"}, names)
 
 	assert.Equal(t, "URL.", fields[0].Doc)
-	assert.Equal(t, "bad topic", fields[1].Default, "errored field re-prompts with its current value")
-	assert.Equal(t, []string{"invalid"}, fields[1].Errors)
-	assert.True(t, fields[2].Secret, "password fields must be masked")
-	assert.Equal(t, []string{"insert", "upsert"}, fields[3].Recommended)
+	assert.Equal(t, "1", fields[1].Default, "required field with a default is suggested, not silently accepted")
+	assert.Equal(t, "bad topic", fields[2].Default, "errored field re-prompts with its current value")
+	assert.Equal(t, []string{"invalid"}, fields[2].Errors)
+	assert.True(t, fields[3].Secret, "password fields must be masked")
+	assert.Equal(t, []string{"insert", "upsert"}, fields[4].Recommended)
 }
 
 func TestIsSecretField(t *testing.T) {
