@@ -2,6 +2,22 @@
 
 ---
 
+## Unreleased
+
+### Changed
+- **Breaking for scripts:** commands now exit with code `1` on failure
+  (previously failures were printed but the process exited `0`). User cancels
+  and no-op runs still exit `0`.
+- `--dry-run` is now honored consistently by all mutating commands, including
+  `create`, `update`, and `backup`.
+- `--output json` now produces clean, pipeable stdout: the spinner writes to
+  stderr, and mutating commands either emit a result object (when fully
+  non-interactive) or fail fast instead of prompting.
+- `connector list --config <name> -o json` prints the raw config JSON, and
+  unknown connector names are reported as errors.
+
+---
+
 ## v1.0.1 — 2026-06-12
 
 ### Added

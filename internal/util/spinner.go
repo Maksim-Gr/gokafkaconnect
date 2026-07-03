@@ -2,11 +2,13 @@ package util
 
 import (
 	"fmt"
+	"os"
 	"time"
 )
 
 // StartSpinner starts a simple terminal spinner with msg and returns a stop function.
 // Call the returned function to stop the spinner and clear the line.
+// Frames are written to stderr so piped stdout (e.g. --output json) stays clean.
 func StartSpinner(msg string) func() {
 	done := make(chan struct{})
 	stopped := make(chan struct{})
@@ -17,10 +19,10 @@ func StartSpinner(msg string) func() {
 		for {
 			select {
 			case <-done:
-				fmt.Print("\r\033[K")
+				fmt.Fprint(os.Stderr, "\r\033[K")
 				return
 			default:
-				fmt.Printf("\r%s %c", msg, frames[i%len(frames)])
+				fmt.Fprintf(os.Stderr, "\r%s %c", msg, frames[i%len(frames)])
 				i++
 				time.Sleep(80 * time.Millisecond)
 			}

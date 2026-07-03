@@ -1,9 +1,10 @@
 package connector
 
 import (
-	"github.com/Maksim-Gr/kkon/internal/util"
+	"context"
 
-	"github.com/fatih/color"
+	"github.com/Maksim-Gr/kkon/internal/connector"
+
 	"github.com/spf13/cobra"
 )
 
@@ -13,26 +14,7 @@ var PauseCmd = &cobra.Command{
 	Short: "Pause a connector",
 	Long:  "Pauses a Kafka Connect connector and its tasks (select interactively or pass the connector name).",
 	Args:  cobra.MaximumNArgs(1),
-	Run: func(cmd *cobra.Command, args []string) {
-		client, ok := util.NewKafkaConnectClient()
-		if !ok {
-			return
-		}
-
-		name, ok := util.ResolveConnectorName(cmd.Context(), client, argOrEmpty(args))
-		if !ok {
-			return
-		}
-
-		if isDryRun(cmd) {
-			color.Yellow("[dry-run] Would pause connector %s\n", name)
-			return
-		}
-
-		if err := client.PauseConnector(cmd.Context(), name); err != nil {
-			color.Red("Failed to pause %s: %v\n", name, err)
-			return
-		}
-		color.Green("Pause requested for %s\n", name)
-	},
+	RunE: lifecycleRunE("pause", func(ctx context.Context, client *connector.Client, name string) error {
+		return client.PauseConnector(ctx, name)
+	}),
 }

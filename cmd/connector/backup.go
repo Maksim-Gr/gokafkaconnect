@@ -2,6 +2,8 @@
 package connector
 
 import (
+	"fmt"
+
 	"github.com/Maksim-Gr/kkon/internal/connector"
 	"github.com/Maksim-Gr/kkon/internal/util"
 
@@ -16,31 +18,32 @@ var BackupCmd = &cobra.Command{
 	Use:   "backup",
 	Short: "Backup connectors config from Kafka Connect API",
 	Long:  `Backup connectors config from Kafka Connect API and save to file for future usage `,
-	Run: func(cmd *cobra.Command, _ []string) {
-		cfg, err := util.LoadConfig()
+	RunE: func(cmd *cobra.Command, _ []string) error {
+		client, err := util.NewKafkaConnectClient()
 		if err != nil {
-			color.Red("Failed to load config: %v\n", err)
-			return
-		}
-		client := connector.NewClient(cfg.KafkaConnect.URL)
-		if cfg.KafkaConnect.Username != "" {
-			client.SetBasicAuth(cfg.KafkaConnect.Username, cfg.KafkaConnect.Password)
+			return err
 		}
 
 		stop := util.StartSpinner("Backing up connectors...")
 		connectors, err := client.ListConnectors(cmd.Context())
 		if err != nil {
 			stop()
-			color.Red("Failed to dump connector config: %v\n", err)
-			return
+			return fmt.Errorf("failed to list connectors: %w", err)
 		}
+
+		if util.IsDryRun(cmd) {
+			stop()
+			color.Yellow("[dry-run] Would back up %d connector(s) to %s\n", len(connectors), backupDir)
+			return nil
+		}
+
 		backupFile, err := connector.BackupConnectorConfig(cmd.Context(), client, connectors, backupDir)
 		stop()
 		if err != nil {
-			color.Red("Failed to back up connectors config: %v\n", err)
-			return
+			return fmt.Errorf("failed to back up connectors config: %w", err)
 		}
 		color.Green("Successfully backed up %d connector(s) → %s\n", len(connectors), backupFile)
+		return nil
 	},
 }
 

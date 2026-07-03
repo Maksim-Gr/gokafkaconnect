@@ -3,7 +3,9 @@ package connector
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"maps"
 	"sort"
 	"strings"
 	"time"
@@ -18,12 +20,21 @@ import (
 
 // configMapFromFile extracts a connector config map from a connector JSON file,
 // accepting either the wrapped {"name":..,"config":{..}} form or a flat config
-// map. It returns nil if neither form parses, in which case validation is skipped.
+// map. For the wrapped form the top-level name is folded into the config, since
+// the validate endpoint requires it. It returns nil if neither form parses, in
+// which case validation is skipped.
 func configMapFromFile(b []byte) map[string]string {
 	var wrapper struct {
+		Name   string            `json:"name"`
 		Config map[string]string `json:"config"`
 	}
 	if err := json.Unmarshal(b, &wrapper); err == nil && len(wrapper.Config) > 0 {
+		if wrapper.Name != "" && wrapper.Config["name"] == "" {
+			cfg := make(map[string]string, len(wrapper.Config)+1)
+			maps.Copy(cfg, wrapper.Config)
+			cfg["name"] = wrapper.Name
+			return cfg
+		}
 		return wrapper.Config
 	}
 	var flat map[string]string
@@ -41,9 +52,49 @@ func argOrEmpty(args []string) string {
 	return ""
 }
 
-// isDryRun reports whether the global --dry-run flag is set.
-func isDryRun(cmd *cobra.Command) bool {
-	return cmd.Root().PersistentFlags().Lookup("dry-run").Value.String() == "true"
+// errNonInteractiveJSON is returned when --output json is combined with a
+// command invocation that would need to prompt.
+var errNonInteractiveJSON = errors.New("--output json requires non-interactive usage (pass the connector name and --yes)")
+
+// printActionJSON emits a single action result object to stdout for --output json mode.
+func printActionJSON(name, action string) {
+	b, _ := json.Marshal(map[string]string{"name": name, "action": action, "result": "ok"})
+	fmt.Println(string(b))
+}
+
+// lifecycleRunE returns a RunE shared by pause and resume, which differ only
+// in the API call and the verb used in messages.
+func lifecycleRunE(verb string, op func(ctx context.Context, client *connector.Client, name string) error) func(cmd *cobra.Command, args []string) error {
+	return func(cmd *cobra.Command, args []string) error {
+		if util.IsJSONOutput(cmd) && argOrEmpty(args) == "" {
+			return errNonInteractiveJSON
+		}
+
+		client, err := util.NewKafkaConnectClient()
+		if err != nil {
+			return err
+		}
+
+		name, err := util.ResolveConnectorName(cmd.Context(), client, argOrEmpty(args))
+		if err != nil {
+			return err
+		}
+
+		if util.IsDryRun(cmd) {
+			color.Yellow("[dry-run] Would %s connector %s\n", verb, name)
+			return nil
+		}
+
+		if err := op(cmd.Context(), client, name); err != nil {
+			return fmt.Errorf("failed to %s %s: %w", verb, name, err)
+		}
+		if util.IsJSONOutput(cmd) {
+			printActionJSON(name, verb)
+			return nil
+		}
+		color.Green("%s requested for %s\n", strings.ToUpper(verb[:1])+verb[1:], name)
+		return nil
+	}
 }
 
 // validateConfigOrConfirm runs server-side validation on a connector config.
@@ -83,12 +134,39 @@ func validateConfigOrConfirm(ctx context.Context, client *connector.Client, cfg 
 	return proceed
 }
 
+// validateConfigStrict runs server-side validation and returns an error listing
+// the failing fields. It is the non-interactive counterpart of
+// validateConfigOrConfirm for contexts where prompting is not possible
+// (--output json). Like the interactive variant, it proceeds when the
+// connector.class is unknown or validation itself can't run.
+func validateConfigStrict(ctx context.Context, client *connector.Client, cfg map[string]string) error {
+	class := cfg["connector.class"]
+	if class == "" {
+		return nil
+	}
+
+	res, err := client.ValidateConnectorConfig(ctx, class, cfg)
+	if err != nil || res.ErrorCount == 0 {
+		return nil
+	}
+
+	var b strings.Builder
+	fmt.Fprintf(&b, "validation found %d error(s):", res.ErrorCount)
+	for _, c := range res.Configs {
+		for _, e := range c.Value.Errors {
+			fmt.Fprintf(&b, "\n  %s: %s", c.Value.Name, e)
+		}
+	}
+	return errors.New(b.String())
+}
+
 // editConnectorConfig fetches the named connector's live config, lets the user
 // edit fields interactively, shows a diff, validates, and applies the change.
 // Applying restarts the connector, so it then verifies the connector comes back
-// RUNNING and offers to revert to the original config if it does not. Benign
-// exits (cancel, no changes) return nil so callers don't print a second error.
-func editConnectorConfig(ctx context.Context, client *connector.Client, selected string) error {
+// RUNNING and offers to revert to the original config if it does not.
+// User cancels return util.ErrCanceled; with dryRun the diff is shown but the
+// change is not applied.
+func editConnectorConfig(ctx context.Context, client *connector.Client, selected string, dryRun bool) error {
 	connectorConfig, err := client.GetConnectorConfigJSON(ctx, selected)
 	if err != nil {
 		return fmt.Errorf("failed to get connector config: %w", err)
@@ -119,16 +197,14 @@ func editConnectorConfig(ctx context.Context, client *connector.Client, selected
 			Message: "Which field do you want to change?",
 			Options: fields,
 		}, &fieldToChange); err != nil {
-			color.Yellow("Canceled\n")
-			return nil
+			return util.ErrCanceled
 		}
 
 		var newValue string
 		if err := survey.AskOne(&survey.Input{
 			Message: fmt.Sprintf("New value for %s (current: %v):", fieldToChange, connectorConfig[fieldToChange]),
 		}, &newValue); err != nil {
-			color.Yellow("Canceled\n")
-			return nil
+			return util.ErrCanceled
 		}
 		connectorConfig[fieldToChange] = newValue
 
@@ -137,8 +213,7 @@ func editConnectorConfig(ctx context.Context, client *connector.Client, selected
 			Message: "Change another field?",
 			Default: false,
 		}, &more); err != nil {
-			color.Yellow("Canceled\n")
-			return nil
+			return util.ErrCanceled
 		}
 		if !more {
 			break
@@ -170,18 +245,21 @@ func editConnectorConfig(ctx context.Context, client *connector.Client, selected
 		fmt.Printf("  %-*s  %s  →  %s\n", maxKeyLen, k, original[k], connectorConfig[k])
 	}
 
+	if dryRun {
+		color.Yellow("[dry-run] Would apply %d change(s) to %s\n", len(changedKeys), selected)
+		return nil
+	}
+
 	var confirm bool
 	if err := survey.AskOne(&survey.Confirm{
 		Message: "Apply this config to " + selected + "?",
 		Default: true,
 	}, &confirm); err != nil || !confirm {
-		color.Yellow("Canceled\n")
-		return nil
+		return util.ErrCanceled
 	}
 
 	if !validateConfigOrConfirm(ctx, client, connectorConfig) {
-		color.Yellow("Canceled\n")
-		return nil
+		return util.ErrCanceled
 	}
 
 	if err := client.UpdateConnectorConfig(ctx, selected, connectorConfig); err != nil {

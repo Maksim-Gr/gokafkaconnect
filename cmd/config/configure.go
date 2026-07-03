@@ -14,14 +14,13 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var dryRun bool
-
 // ConfigureCmd represents the configure command.
 var ConfigureCmd = &cobra.Command{
 	Use:   "set",
 	Short: "Configure Kafka Connect REST API",
 	Long:  `Configure Kafka Connect REST API URL and authentication.`,
-	RunE: func(_ *cobra.Command, _ []string) error {
+	RunE: func(cmd *cobra.Command, _ []string) error {
+		dryRun := util.IsDryRun(cmd)
 
 		if dryRun {
 			color.Cyan("Dry run mode")
@@ -71,8 +70,7 @@ var ConfigureCmd = &cobra.Command{
 		))
 		if err != nil {
 			if util.IsSurveyInterrupt(err) {
-				color.Yellow("Canceled\n")
-				return nil
+				return util.ErrCanceled
 			}
 			return fmt.Errorf("failed to read URL: %w", err)
 		}
@@ -92,8 +90,7 @@ var ConfigureCmd = &cobra.Command{
 
 		if err := survey.AskOne(userPrompt, &inputUser); err != nil {
 			if util.IsSurveyInterrupt(err) {
-				color.Yellow("Canceled\n")
-				return nil
+				return util.ErrCanceled
 			}
 			return fmt.Errorf("failed to read username: %w", err)
 		}
@@ -111,8 +108,7 @@ var ConfigureCmd = &cobra.Command{
 			}
 			if err := survey.AskOne(passPrompt, &inputPass); err != nil {
 				if util.IsSurveyInterrupt(err) {
-					color.Yellow("Canceled\n")
-					return nil
+					return util.ErrCanceled
 				}
 				return fmt.Errorf("failed to read password: %w", err)
 			}
@@ -171,9 +167,4 @@ var ConfigureCmd = &cobra.Command{
 
 		return nil
 	},
-}
-
-// SetDryRun sets the dry-run flag for config subcommands.
-func SetDryRun(value bool) {
-	dryRun = value
 }

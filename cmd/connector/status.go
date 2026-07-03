@@ -3,10 +3,8 @@ package connector
 import (
 	"encoding/json"
 	"fmt"
-	"os"
 	"strings"
 
-	"github.com/Maksim-Gr/kkon/internal/connector"
 	"github.com/Maksim-Gr/kkon/internal/util"
 
 	"github.com/fatih/color"
@@ -20,29 +18,17 @@ var HealthCheckCmd = &cobra.Command{
 	Use:   "health-check",
 	Short: "Show connector statuses",
 	Long:  `Show each connector status`,
-	Run: func(cmd *cobra.Command, _ []string) {
-		cfg, err := util.LoadConfig()
+	RunE: func(cmd *cobra.Command, _ []string) error {
+		client, err := util.NewKafkaConnectClient()
 		if err != nil {
-			color.Red("Failed to load config: %v\n", err)
-			return
+			return err
 		}
-		client := connector.NewClient(cfg.KafkaConnect.URL)
-		if cfg.KafkaConnect.Username != "" {
-			client.SetBasicAuth(cfg.KafkaConnect.Username, cfg.KafkaConnect.Password)
-		}
-
-		jsonMode := cmd.Root().PersistentFlags().Lookup("output").Value.String() == "json"
 
 		stop := util.StartSpinner("Fetching connector statuses...")
 		connectorStatuses, err := client.ListConnectorStatuses(cmd.Context())
 		stop()
 		if err != nil {
-			if jsonMode {
-				fmt.Fprintf(os.Stderr, "error: %v\n", err)
-			} else {
-				color.Red("Failed to list connector statuses: %v\n", err)
-			}
-			return
+			return fmt.Errorf("failed to list connector statuses: %w", err)
 		}
 
 		if healthState != "" {
@@ -53,16 +39,17 @@ var HealthCheckCmd = &cobra.Command{
 			}
 		}
 
-		if jsonMode {
+		if util.IsJSONOutput(cmd) {
 			b, _ := json.MarshalIndent(connectorStatuses, "", "  ")
 			fmt.Println(string(b))
-			return
+			return nil
 		}
 
 		color.Cyan("Connector Statuses:")
 		for name, status := range connectorStatuses {
 			printConnectorStatus(cmd.Context(), client, name, status)
 		}
+		return nil
 	},
 }
 
