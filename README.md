@@ -18,7 +18,7 @@ A command-line interface for managing Kafka Connect connectors via the Kafka Con
 `kkon` focuses on providing a fast, simple, and interactive CLI experience for day-to-day connector operations.
 
 <div align="center">
-  <img src="./assets/demo.gif" alt="kkon demo — list connectors, inspect status and config interactively" width="90%">
+  <img src="./assets/demo.gif" alt="kkon demo — list connectors, inspect status and config, and create a connector from an installed plugin" width="90%">
 </div>
 
 ---
@@ -36,16 +36,16 @@ The tool is intended for developers and operators who want a straightforward way
 
 - List running Kafka Connect connectors with live status badges (RUNNING / FAILED / PAUSED)
 - View connector configurations
-- Create connectors from predefined templates (RabbitMQ, S3 Sink, JDBC, Debezium Postgres)
-- Delete existing connectors
+- Create connectors from predefined templates (RabbitMQ, S3 Sink, JDBC, Debezium Postgres), from **any plugin installed on the cluster** (`--plugin <class>` or the `Custom` wizard option — discovers required fields via the validate endpoint), or from a JSON file
+- Pause, resume, restart, and delete connectors individually, by name, or in bulk (`--all` or a multi-select) — bulk runs continue past individual failures and print a per-connector ✓/✗ summary
 - Update connector configuration with a before→after diff view
-- Back up connector configurations to JSON files
+- Back up connector configurations to JSON files, and restore them later (continues past individual failures, exits non-zero if any restore failed)
 - Health-check with per-task error trace preview for failed tasks
 - Interactive CLI prompts (arrow-key navigation, cancel option on every prompt)
 - Connection test after saving credentials
 - Basic auth support
 - Simple configuration-driven setup
-- JSON output for all read commands (`--output json`)
+- Scriptable: commands exit `1` on failure (`0` for success, user cancel, or nothing to do), and `--output json` produces clean, pipeable JSON for both read and (fully non-interactive) mutating commands, including `--dry-run` previews
 
 ---
 
@@ -114,21 +114,24 @@ kkon --help
 ```bash
 kkon connector list                      # List connectors with status badges
 kkon connector create                    # Create from template (RabbitMQ, S3 Sink, JDBC, Debezium Postgres)
+kkon connector create --plugin <class>   # Create from any plugin installed on the cluster
 kkon connector create -f connector.json  # Create from JSON file
 kkon connector update                    # Update connector config (shows before→after diff)
-kkon connector delete [name]             # Delete a connector (interactive, or pass a name)
+kkon connector delete [name...]          # Delete one or more connectors (interactive multi-select, names, or --all)
 kkon connector delete my-conn --yes      # Delete without the confirmation prompt (scriptable)
-kkon connector pause [name]              # Pause a connector and its tasks
-kkon connector resume [name]             # Resume a paused connector
-kkon connector restart [name]            # Restart a connector (and its tasks)
+kkon connector pause [name...]           # Pause connectors and their tasks
+kkon connector resume [name...]          # Resume paused connectors
+kkon connector restart [name...]         # Restart connectors (and their tasks)
 kkon connector restart [name] --only-failed     # Restart only FAILED connector and tasks
+kkon connector restart --all --yes       # Restart every connector, skipping confirmation
 kkon connector health-check              # Show connector and task statuses with error traces
 kkon connector plugins                   # List connector plugins installed on the cluster
 kkon connector plugins --type sink       # Filter plugins by type (source or sink)
+kkon connector backup                    # Back up all connector configs to JSON
 kkon connector restore [file]            # Restore connectors from a backup file (interactive if omitted)
 ```
 
-> `delete`, `pause`, `resume`, and `restart` take an optional connector name — omit it to pick interactively. `delete` and `restart` accept `--yes/-y` to skip the confirmation prompt (for scripting). `restart` restarts tasks by default (`--include-tasks`); use `--only-failed` to restart only failed connectors/tasks.
+> `delete`, `pause`, `resume`, and `restart` take optional connector names — omit them to multi-select interactively, or pass `--all` to target every connector. All four accept `--yes/-y` to skip the confirmation prompt (for scripting); `pause`/`resume` only confirm when targeting more than one connector. Operating on multiple connectors continues past individual failures, prints a per-connector ✓/✗ summary, and exits `1` if any operation failed. `restart` restarts tasks by default (`--include-tasks`); use `--only-failed` to restart only failed connectors/tasks.
 
 ### Task commands
 
@@ -143,16 +146,16 @@ kkon task restart -c <name>   # Restart a task
 ```bash
 kkon config set               # Set Kafka Connect URL and credentials
 kkon config show              # Display current configuration
-kkon connector backup         # Backup all connector configs to JSON
-kkon connector backup --dir ./backup
 ```
 
 ### Global flags
 
 ```bash
---dry-run, -d        Preview actions without making any API calls
+--dry-run, -d        Preview a mutating command without executing it (read-only commands ignore it)
 --output, -o <fmt>   Output format: text (default) or json
 ```
+
+Exit codes: `0` for success, user cancel, or nothing to do (e.g. no connectors found); `1` for any failure.
 
 ---
 
@@ -172,7 +175,7 @@ Restore them with:
 kkon connector restore ./backup/config_20240101_120000.json
 ```
 
-Run `kkon connector restore` with no argument to pick a backup file interactively from the backup directory. Existing connectors are only overwritten after confirmation (use `--yes` to skip prompts, or `--dry-run` to preview).
+Run `kkon connector restore` with no argument to pick a backup file interactively from the backup directory. Existing connectors are only overwritten after confirmation (use `--yes` to skip prompts, or `--dry-run` to preview). Restoring continues past individual failures, prints a per-connector ✓/✗ summary, and exits `1` if any connector failed to restore.
 
 ---
 
