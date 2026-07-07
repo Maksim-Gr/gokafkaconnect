@@ -189,7 +189,7 @@ Run `kkon connector restore` with no argument to pick a backup file interactivel
 ## Project Status
 
 `kkon` is stable and actively used for connector lifecycle management.
-Releases follow semantic versioning (`v1.x`); new connector templates and API features continue to be added in backward-compatible minor releases.
+Releases follow semantic versioning; new connector templates and API features are added in backward-compatible minor releases, and breaking changes (e.g. exit code behavior in v2.0.0) bump the major version.
 
 ---
 

@@ -4,6 +4,10 @@
 
 ## Unreleased
 
+---
+
+## v2.0.0 — 2026-07-03
+
 ### Added
 - `connector create` can now configure a connector from **any plugin installed
   on the cluster**: pick `Custom (choose from installed plugins)` in the wizard
