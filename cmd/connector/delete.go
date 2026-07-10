@@ -12,8 +12,24 @@ import (
 var DeleteCmd = &cobra.Command{
 	Use:   "delete [name...]",
 	Short: "Delete connectors",
-	Long:  "Delete connectors from Kafka Connect (multi-select interactively, pass connector names, or use --all).",
-	Args:  cobra.ArbitraryArgs,
+	Long: `Delete one or more connectors from Kafka Connect. Run without arguments to
+multi-select interactively, pass connector names, or use --all. Deletion asks
+for confirmation unless --yes is given.`,
+	Example: `  # Pick connectors to delete interactively
+  kkon connector delete
+
+  # Delete a specific connector
+  kkon connector delete my-connector
+
+  # Delete several connectors without confirmation
+  kkon connector delete connector-a connector-b --yes
+
+  # Delete every connector (scripts/CI)
+  kkon connector delete --all --yes
+
+  # Preview deletions without executing them
+  kkon connector delete --all --dry-run`,
+	Args: cobra.ArbitraryArgs,
 	RunE: lifecycleRunE(lifecycleSpec{
 		verb:          "delete",
 		successFmt:    "Connector %s deleted\n",

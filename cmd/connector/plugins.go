@@ -18,7 +18,16 @@ var pluginType string
 var PluginsCmd = &cobra.Command{
 	Use:   "plugins",
 	Short: "List connector plugins installed on the cluster",
-	Long:  "List the connector plugin classes available on Kafka Connect (useful before create).",
+	Long: `List the connector plugin classes available on the Kafka Connect cluster.
+Useful for finding a class to pass to 'kkon connector create --plugin'.`,
+	Example: `  # List all installed plugins
+  kkon connector plugins
+
+  # Show only source plugins
+  kkon connector plugins --type source
+
+  # Machine-readable output
+  kkon connector plugins --output json`,
 	RunE: func(cmd *cobra.Command, _ []string) error {
 		client, err := util.NewKafkaConnectClient()
 		if err != nil {

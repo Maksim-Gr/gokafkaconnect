@@ -12,9 +12,10 @@ import (
 
 // ShowConfigCmd represents the showConfig command.
 var ShowConfigCmd = &cobra.Command{
-	Use:   "show",
-	Short: "Show current configuration",
-	Long:  `Display Kafka Connect API endpoint.`,
+	Use:     "show",
+	Short:   "Show current configuration",
+	Long:    `Print the config file path and its contents. The password is masked.`,
+	Example: `  kkon config show`,
 	RunE: func(_ *cobra.Command, _ []string) error {
 		cfg, err := util.LoadConfig()
 		if err != nil {

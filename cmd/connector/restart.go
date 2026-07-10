@@ -18,8 +18,25 @@ var (
 var RestartCmd = &cobra.Command{
 	Use:   "restart [name...]",
 	Short: "Restart connectors",
-	Long:  "Restarts Kafka Connect connectors (multi-select interactively, pass connector names, or use --all).",
-	Args:  cobra.ArbitraryArgs,
+	Long: `Restart one or more connectors, including their tasks by default
+(--include-tasks). Run without arguments to multi-select interactively, pass
+connector names, or use --all. Use --only-failed to restart only FAILED
+connectors and tasks; skip confirmation with --yes.`,
+	Example: `  # Pick connectors to restart interactively
+  kkon connector restart
+
+  # Restart a connector and its tasks
+  kkon connector restart my-connector
+
+  # Restart only what has FAILED
+  kkon connector restart my-connector --only-failed
+
+  # Restart several connectors without confirmation
+  kkon connector restart connector-a connector-b --yes
+
+  # Preview without restarting anything
+  kkon connector restart --all --dry-run`,
+	Args: cobra.ArbitraryArgs,
 	RunE: lifecycleRunE(lifecycleSpec{
 		verb:           "restart",
 		successFmt:     "Restart requested for %s\n",

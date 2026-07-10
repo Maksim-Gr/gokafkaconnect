@@ -24,8 +24,21 @@ var (
 var RestoreCmd = &cobra.Command{
 	Use:   "restore [file]",
 	Short: "Restore connectors from a backup file",
-	Long:  "Re-create connectors from a backup JSON file produced by 'kkon connector backup'.",
-	Args:  cobra.MaximumNArgs(1),
+	Long: `Re-create connectors from a backup JSON file produced by 'kkon connector
+backup'. Without a file argument, pick one interactively from --dir. Existing
+connectors are only overwritten after confirmation (skip it with --yes).`,
+	Example: `  # Pick a backup file from ./backup interactively
+  kkon connector restore
+
+  # Restore a specific backup file
+  kkon connector restore ./backup/config_20260710_120000.json
+
+  # Overwrite existing connectors without confirmation
+  kkon connector restore ./backup/config_20260710_120000.json --yes
+
+  # Preview without applying
+  kkon connector restore ./backup/config_20260710_120000.json --dry-run`,
+	Args: cobra.MaximumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		jsonMode := util.IsJSONOutput(cmd)
 		if jsonMode && (argOrEmpty(args) == "" || !restoreYes) {

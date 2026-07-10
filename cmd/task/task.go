@@ -11,7 +11,13 @@ var (
 var Cmd = &cobra.Command{
 	Use:   "task",
 	Short: "Manage Kafka Connect tasks",
-	Long:  "Task operations for Kafka Connect (list, get status, restart).",
+	Long: `List, inspect, and restart the tasks of a connector. All subcommands accept
+--connector and --id; omit them to select interactively.`,
+	Example: `  # List tasks for a connector
+  kkon task list --connector my-connector
+
+  # Get the status of a single task
+  kkon task get --connector my-connector --id 0`,
 }
 
 func init() {

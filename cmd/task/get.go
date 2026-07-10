@@ -13,8 +13,17 @@ import (
 
 var getCmd = &cobra.Command{
 	Use:   "get",
-	Short: "Get task status",
-	Long:  "Fetches status for a single task (select interactively or use --connector and --id).",
+	Short: "Show the status of a single task",
+	Long: `Fetch the state, worker, and error trace of one task. Prompts for the
+connector and task when --connector or --id are not given.`,
+	Example: `  # Pick a connector and task interactively
+  kkon task get
+
+  # Get the status of a specific task
+  kkon task get --connector my-connector --id 0
+
+  # Machine-readable output
+  kkon task get --connector my-connector --id 0 --output json`,
 	RunE: func(cmd *cobra.Command, _ []string) error {
 		client, err := util.NewKafkaConnectClient()
 		if err != nil {
