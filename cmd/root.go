@@ -27,9 +27,26 @@ var OutputFormat string
 // RootCmd represents the base command when called without any subcommands.
 var RootCmd = &cobra.Command{
 	Use:   "kkon",
-	Short: "CLI to manage Kafka connector fast and easy!",
-	Long: `kkon - cli tool for working with Kafka Connect.
-	Manage, create, and list predefined connector in seconds!`,
+	Short: "Manage Kafka Connect connectors from the command line",
+	Long: `kkon is a CLI for working with Kafka Connect.
+
+Create, update, and operate connectors and their tasks, back up and restore
+connector configs, and manage the Kafka Connect connection settings.
+
+Most commands are interactive: run them without arguments to pick connectors
+from a prompt, or pass names and flags for scripting. On first use, kkon walks
+you through configuring the Kafka Connect URL.`,
+	Example: `  # First-time setup (also runs automatically on first use)
+  kkon config set
+
+  # Create a connector interactively
+  kkon connector create
+
+  # List connectors as JSON
+  kkon connector list --output json
+
+  # Preview a restart without executing it
+  kkon connector restart my-connector --dry-run`,
 	SilenceErrors: true,
 	SilenceUsage:  true,
 	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {

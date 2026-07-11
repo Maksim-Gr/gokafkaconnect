@@ -21,8 +21,9 @@ func SetVersionInfo(version, commit, date string) {
 
 // versionCmd prints detailed build metadata.
 var versionCmd = &cobra.Command{
-	Use:   "version",
-	Short: "Print version information",
+	Use:     "version",
+	Short:   "Print version information",
+	Example: `  kkon version`,
 	RunE: func(_ *cobra.Command, _ []string) error {
 		fmt.Printf("kkon %s\n", versionStr)
 		fmt.Printf("commit: %s\n", commitStr)

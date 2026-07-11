@@ -36,8 +36,23 @@ var (
 // CreateCmd represents the create command.
 var CreateCmd = &cobra.Command{
 	Use:   "create",
-	Short: "Create a connector from predefined configuration",
-	Long:  `Create a connector from a predefined template, from any plugin installed on the cluster, or from a JSON file.`,
+	Short: "Create a connector from a template, plugin, or JSON file",
+	Long: `Create a connector on Kafka Connect.
+
+Without flags, an interactive wizard offers predefined templates or any plugin
+installed on the cluster. Pass --plugin to configure a specific plugin class,
+or --file to submit a JSON config non-interactively.`,
+	Example: `  # Interactive wizard with predefined templates
+  kkon connector create
+
+  # Configure a specific installed plugin (see 'kkon connector plugins')
+  kkon connector create --plugin io.debezium.connector.postgresql.PostgresConnector
+
+  # Create from a JSON config file
+  kkon connector create --file ./my-connector.json
+
+  # Preview without creating anything
+  kkon connector create --file ./my-connector.json --dry-run`,
 	RunE: func(cmd *cobra.Command, _ []string) error {
 		if connectorJSONPath != "" {
 			return submitConnectorFromFile(cmd, connectorJSONPath)

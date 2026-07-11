@@ -14,7 +14,16 @@ import (
 var restartCmd = &cobra.Command{
 	Use:   "restart",
 	Short: "Restart a task",
-	Long:  "Restarts a single Kafka Connect task (select interactively or use --connector and --id).",
+	Long: `Restart a single task of a connector, with confirmation. Prompts for the
+connector and task when --connector or --id are not given.`,
+	Example: `  # Pick a connector and task interactively
+  kkon task restart
+
+  # Restart a specific task
+  kkon task restart --connector my-connector --id 1
+
+  # Preview without restarting
+  kkon task restart --connector my-connector --id 1 --dry-run`,
 	RunE: func(cmd *cobra.Command, _ []string) error {
 		if util.IsJSONOutput(cmd) {
 			return errors.New("--output json is not supported for task restart (interactive command)")

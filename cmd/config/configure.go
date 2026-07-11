@@ -17,8 +17,15 @@ import (
 // ConfigureCmd represents the configure command.
 var ConfigureCmd = &cobra.Command{
 	Use:   "set",
-	Short: "Configure Kafka Connect REST API",
-	Long:  `Configure Kafka Connect REST API URL and authentication.`,
+	Short: "Configure the Kafka Connect connection",
+	Long: `Interactively set the Kafka Connect REST API URL and optional basic-auth
+credentials, then optionally test the connection. Runs automatically the
+first time kkon needs a connection.`,
+	Example: `  # Run the configuration wizard
+  kkon config set
+
+  # Preview without saving the config
+  kkon config set --dry-run`,
 	RunE: func(cmd *cobra.Command, _ []string) error {
 		dryRun := util.IsDryRun(cmd)
 

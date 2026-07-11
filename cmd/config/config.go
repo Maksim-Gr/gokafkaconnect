@@ -8,8 +8,14 @@ import (
 // Cmd is the root command for configuration management.
 var Cmd = &cobra.Command{
 	Use:   "config",
-	Short: "Configuration management commands",
-	Long:  `Manage Kafka Connect configuration including URL setup and backups.`,
+	Short: "Manage kkon configuration",
+	Long: `Configure and inspect the Kafka Connect connection settings (URL and optional
+basic auth) stored in kkon's config file.`,
+	Example: `  # Set the Kafka Connect URL interactively
+  kkon config set
+
+  # Print the current configuration
+  kkon config show`,
 }
 
 func init() {

@@ -7,8 +7,14 @@ import (
 // Cmd is the root command for connector management.
 var Cmd = &cobra.Command{
 	Use:   "connector",
-	Short: "Connector management commands",
-	Long:  `Manage Kafka connectors including creation, deletion, listing, and health checks.`,
+	Short: "Manage Kafka Connect connectors",
+	Long: `Create, update, delete, list, pause, resume, restart, back up, and restore
+Kafka Connect connectors, and inspect the plugins installed on the cluster.`,
+	Example: `  # Create a connector interactively
+  kkon connector create
+
+  # Show the status of every connector
+  kkon connector health-check`,
 }
 
 func init() {

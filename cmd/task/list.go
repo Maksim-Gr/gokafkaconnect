@@ -13,7 +13,16 @@ import (
 var listCmd = &cobra.Command{
 	Use:   "list",
 	Short: "List tasks for a connector",
-	Long:  "Lists tasks for a selected connector (or --connector).",
+	Long: `List a connector's tasks and their states. Prompts for the connector when
+--connector is not given.`,
+	Example: `  # Pick a connector and list its tasks
+  kkon task list
+
+  # List tasks for a specific connector
+  kkon task list --connector my-connector
+
+  # Machine-readable output
+  kkon task list --connector my-connector --output json`,
 	RunE: func(cmd *cobra.Command, _ []string) error {
 		client, err := util.NewKafkaConnectClient()
 		if err != nil {

@@ -12,8 +12,21 @@ import (
 var PauseCmd = &cobra.Command{
 	Use:   "pause [name...]",
 	Short: "Pause connectors",
-	Long:  "Pauses Kafka Connect connectors and their tasks (multi-select interactively, pass connector names, or use --all).",
-	Args:  cobra.ArbitraryArgs,
+	Long: `Pause one or more connectors and their tasks. Run without arguments to
+multi-select interactively, pass connector names, or use --all. Confirmation
+is asked only when targeting more than one connector (skip it with --yes).`,
+	Example: `  # Pick connectors to pause interactively
+  kkon connector pause
+
+  # Pause a specific connector
+  kkon connector pause my-connector
+
+  # Pause all connectors without confirmation
+  kkon connector pause --all --yes
+
+  # Preview without pausing anything
+  kkon connector pause --all --dry-run`,
+	Args: cobra.ArbitraryArgs,
 	RunE: lifecycleRunE(lifecycleSpec{
 		verb:           "pause",
 		successFmt:     "Pause requested for %s\n",

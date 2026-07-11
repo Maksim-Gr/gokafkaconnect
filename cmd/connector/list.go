@@ -22,8 +22,21 @@ var (
 // ListCmd represent command for retrieving connectors from API.
 var ListCmd = &cobra.Command{
 	Use:   "list",
-	Short: "List running connectors",
-	Long:  `List current running connector`,
+	Short: "List connectors and inspect their configs",
+	Long: `List all connectors with their state, then optionally pick one to print its
+configuration. Use --config to print a named connector's config directly,
+--state to filter, or --output json for machine-readable output.`,
+	Example: `  # List connectors and pick one to inspect
+  kkon connector list
+
+  # Print the config of a specific connector
+  kkon connector list --config my-connector
+
+  # Show only failed connectors
+  kkon connector list --state FAILED
+
+  # Machine-readable output
+  kkon connector list --output json`,
 	RunE: func(cmd *cobra.Command, _ []string) error {
 		client, err := util.NewKafkaConnectClient()
 		if err != nil {

@@ -17,8 +17,17 @@ var backupDir string
 // BackupCmd backs up connector configs from the Kafka Connect API.
 var BackupCmd = &cobra.Command{
 	Use:   "backup",
-	Short: "Backup connectors config from Kafka Connect API",
-	Long:  `Backup connectors config from Kafka Connect API and save to file for future usage `,
+	Short: "Back up all connector configs to a file",
+	Long: `Fetch every connector's configuration from Kafka Connect and save it to a
+JSON backup file for later restore with 'kkon connector restore'.`,
+	Example: `  # Back up all connectors to ./backup
+  kkon connector backup
+
+  # Back up to a custom directory
+  kkon connector backup --dir ./my-backups
+
+  # Preview what would be backed up
+  kkon connector backup --dry-run`,
 	RunE: func(cmd *cobra.Command, _ []string) error {
 		jsonMode := util.IsJSONOutput(cmd)
 

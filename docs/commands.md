@@ -48,7 +48,9 @@ Subcommands:
 - `resume [name...]` Resume one or more paused connectors.
 - `restart [name...]` Restart one or more connectors (and, by default, their tasks).
 - `health-check` Print connector status summary.
-- `backup` Back up all connector configs to JSON files.
+- `plugins` List connector plugin classes installed on the cluster.
+- `backup` Back up all connector configs to a timestamped JSON file.
+- `restore [file]` Re-create connectors from a backup file (pick one interactively if omitted).
 
 Flags:
 - `kkon connector create --file, -f` Path to connector JSON config file.
@@ -56,7 +58,9 @@ Flags:
 - `kkon connector restart --include-tasks` Also restart the connector's tasks (default `true`).
 - `kkon connector restart --only-failed` Restart only FAILED connector and tasks (default `false`).
 - `kkon connector restart --yes, -y` Skip the confirmation prompt (for scripting).
-- `kkon connector backup --dir, -o` Directory to save backup files (default `./backup`).
+- `kkon connector backup --dir` Directory to save backup files (default `./backup`).
+- `kkon connector restore --dir` Directory to look for backup files (default `./backup`).
+- `kkon connector restore --yes, -y` Overwrite existing connectors without confirmation.
 
 Notes:
 - `create` without `--file` opens an interactive prompt with predefined templates.
@@ -73,7 +77,7 @@ kkon connector create --file ./my-connector.json
 
 kkon connector update
 
-kkon connector delete --connector my-connector
+kkon connector delete my-connector
 
 kkon connector list
 
@@ -89,7 +93,11 @@ kkon connector restart connector-a connector-b --yes
 
 kkon connector health-check
 
+kkon connector plugins --type source
+
 kkon connector backup --dir ./backup
+
+kkon connector restore ./backup/config_20260710_120000.json
 ```
 
 ## task

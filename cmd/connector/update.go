@@ -14,8 +14,15 @@ import (
 // UpdateCmd interactively updates an existing connector's configuration.
 var UpdateCmd = &cobra.Command{
 	Use:   "update",
-	Short: "Update an existing connector configuration",
-	Long:  `Fetch a connector's live config and edit fields interactively, then apply the changes.`,
+	Short: "Update an existing connector's configuration",
+	Long: `Select a connector, edit its live configuration interactively, review the
+changes, and apply them. This command is interactive and does not support
+--output json.`,
+	Example: `  # Pick a connector and edit its config
+  kkon connector update
+
+  # Preview the edit without applying it
+  kkon connector update --dry-run`,
 	RunE: func(cmd *cobra.Command, _ []string) error {
 		if util.IsJSONOutput(cmd) {
 			return errors.New("--output json is not supported for update (interactive command)")
