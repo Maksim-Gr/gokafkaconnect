@@ -203,6 +203,10 @@ func configureConnector(cmd *cobra.Command, name string, connectorConfig map[str
 func reviewAndSubmit(cmd *cobra.Command, client *connector.Client, name string, connectorConfig map[string]string) error {
 	ctx := cmd.Context()
 
+	if err := promptSchemaRegistryFormat(connectorConfig); err != nil {
+		return err
+	}
+
 	for {
 		finalConfig, err := util.ToPrettyJSON(connectorConfig)
 		if err != nil {

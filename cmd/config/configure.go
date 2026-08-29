@@ -172,6 +172,77 @@ first time kkon needs a connection.`,
 			}
 		}
 
-		return nil
+		return configureSchemaRegistry(dryRun)
 	},
+}
+
+// configureSchemaRegistry optionally prompts for and saves a Schema
+// Registry URL, used to prefill the converter prompt in
+// 'kkon connector create'. It is skipped by default (existing
+// Kafka-Connect-only users see no new required prompts).
+func configureSchemaRegistry(dryRun bool) error {
+	cfg, err := util.LoadConfig()
+	if err != nil {
+		cfg = util.RestAPIConfig{}
+	}
+	currentURL := cfg.SchemaRegistry.URL
+
+	var configureSR bool
+	srPrompt := &survey.Confirm{
+		Message: "Configure Schema Registry too?",
+		Default: currentURL != "",
+	}
+	if err := survey.AskOne(srPrompt, &configureSR); err != nil {
+		if util.IsSurveyInterrupt(err) {
+			return util.ErrCanceled
+		}
+		return fmt.Errorf("failed to read answer: %w", err)
+	}
+	if !configureSR {
+		return nil
+	}
+
+	var inputURL string
+	urlPrompt := &survey.Input{
+		Message: "Schema Registry URL:",
+		Help:    "Enter the URL of your Confluent Schema Registry (e.g. http://localhost:8081)",
+		Default: currentURL,
+	}
+	if err := survey.AskOne(urlPrompt, &inputURL, survey.WithValidator(
+		func(ans interface{}) error {
+			s := ans.(string)
+			if s == "" {
+				return errors.New("URL cannot be empty")
+			}
+			return util.ValidateURL(s)
+		},
+	)); err != nil {
+		if util.IsSurveyInterrupt(err) {
+			return util.ErrCanceled
+		}
+		return fmt.Errorf("failed to read URL: %w", err)
+	}
+	if !strings.HasPrefix(inputURL, "http://") && !strings.HasPrefix(inputURL, "https://") {
+		color.Yellow("No scheme specified — assuming http://")
+		inputURL = "http://" + inputURL
+	}
+
+	if dryRun {
+		color.Cyan("Dry run mode — config will not be saved.")
+		color.Cyan("Schema Registry URL: %s", inputURL)
+		return nil
+	}
+
+	cfg.SchemaRegistry = util.SchemaRegistryConfig{URL: inputURL}
+
+	configPath, err := util.GetConfigPath()
+	if err != nil {
+		return fmt.Errorf("failed to determine config path: %w", err)
+	}
+	if err := util.SaveConfig(cfg, configPath); err != nil {
+		return fmt.Errorf("failed to save config file: %w", err)
+	}
+
+	color.Green("Schema Registry URL: %s", inputURL)
+	return nil
 }
