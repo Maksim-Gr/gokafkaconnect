@@ -8,9 +8,6 @@ import (
 	"github.com/AlecAivazis/survey/v2"
 )
 
-// promptSchemaRegistryFormat optionally sets key.converter/value.converter
-// and schema.registry.url on cfg for Avro/Protobuf/JSON Schema formats,
-// prefilling the URL from the configured Schema Registry if there is one.
 func promptSchemaRegistryFormat(cfg map[string]string) error {
 	const none = "None (raw JSON, current default)"
 	options := []string{none, "Avro", "Protobuf", "JSON Schema"}

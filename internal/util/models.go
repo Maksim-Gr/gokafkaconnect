@@ -13,9 +13,7 @@ type KafkaConnectConfig struct {
 	Password string `yaml:"password"`
 }
 
-// SchemaRegistryConfig holds the Confluent Schema Registry URL used to
-// prefill the Avro/Protobuf/JSON Schema converter prompt in
-// 'kkon connector create'.
+// SchemaRegistryConfig holds the Confluent Schema Registry URL.
 type SchemaRegistryConfig struct {
 	URL string `yaml:"url"`
 }

@@ -176,10 +176,8 @@ first time kkon needs a connection.`,
 	},
 }
 
-// configureSchemaRegistry optionally prompts for and saves a Schema
-// Registry URL, used to prefill the converter prompt in
-// 'kkon connector create'. It is skipped by default (existing
-// Kafka-Connect-only users see no new required prompts).
+// Skipped by default so existing Kafka-Connect-only users see no new
+// required prompts.
 func configureSchemaRegistry(dryRun bool) error {
 	cfg, err := util.LoadConfig()
 	if err != nil {
