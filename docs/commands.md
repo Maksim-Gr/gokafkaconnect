@@ -23,7 +23,7 @@ kkon config <subcommand>
 ```
 
 Subcommands:
-- `set` Prompt for Kafka Connect URL and optional basic auth.
+- `set` Prompt for Kafka Connect URL and optional basic auth, then optionally prompt for Schema Registry URL and basic auth too.
 - `show` Print the current config file.
 
 Examples:
@@ -64,6 +64,7 @@ Flags:
 
 Notes:
 - `create` without `--file` opens an interactive prompt with predefined templates.
+- `create`'s review step asks whether to use Avro/Protobuf/JSON Schema (Confluent Schema Registry converters) for the connector's value (and optionally key), prefilling the URL from the configured Schema Registry if there is one.
 - `list` prompts you to select a connector and then prints its config.
 - `delete`, `pause`, `resume`, and `restart` take optional connector names — omit them to multi-select interactively, or pass `--all` to target every connector.
 - All four accept `--yes, -y` to skip the confirmation prompt (useful in scripts/CI). `pause` and `resume` only confirm when targeting more than one connector.
